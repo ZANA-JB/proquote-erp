@@ -1,0 +1,15 @@
+.git
+**/.git
+**/__pycache__
+**/*.py[cod]
+**/.env
+**/.env.*
+Backend/venv
+Backend/test.db*
+Backend/storage
+Backend/scripts
+Backend/tests
+Backend/.pytest_cache
+Frontend
+REFERENCE/*
+!REFERENCE/logo.jpeg
