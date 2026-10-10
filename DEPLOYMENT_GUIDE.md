@@ -54,3 +54,5 @@ Le déploiement Render réel ne peut être confirmé qu’après cette vérifica
 ## 4. Déploiement automatique GitHub (facultatif)
 
 Le workflow `.github/workflows/render-deploy.yml` déclenche un déploiement Render à chaque push sur `main` ou `master`. Dans Render, créer un **Deploy Hook**, puis enregistrer son URL dans GitHub sous **Settings → Secrets and variables → Actions** avec le nom `RENDER_DEPLOY_HOOK_URL`. Ne pas écrire cette URL dans le dépôt.
+
+Ce workflow est facultatif. Sans `RENDER_DEPLOY_HOOK_URL`, son exécution se termine volontairement sans déclencher Render ; le statut GitHub « success » ne signifie alors pas que l’application a été déployée. Pour configurer et lancer le premier déploiement manuellement, utiliser le Blueprint dans le Dashboard Render.
