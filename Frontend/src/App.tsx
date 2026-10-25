@@ -379,6 +379,8 @@ function LegalNoticesPage() {
 }
 
 function PrivacyPage() {
+  const privacyContactEmail = 'tridentoilservices@gmail.com'
+
   return (
     <main className="legal-page-shell privacy-page-shell">
       <header className="legal-page-topbar">
@@ -396,7 +398,7 @@ function PrivacyPage() {
         <div className="legal-page-heading">
           <p>PROTECTION DES DONNÉES</p>
           <h1>Confidentialité</h1>
-          <span>Résumé technique à valider par l’organisation responsable du traitement.</span>
+          <span>Données et opérations effectuées par ProQuote ERP en production.</span>
         </div>
 
         <section className="legal-section privacy-intro-section">
@@ -404,9 +406,11 @@ function PrivacyPage() {
             <h2>Portée</h2>
           </div>
           <p>
-            Cette page résume les catégories de données et mécanismes visibles dans le dépôt.
-            Elle ne détermine ni le responsable légal du traitement, ni sa base juridique, ni les
-            obligations applicables. Ces éléments doivent être validés par l’organisation.
+            Cette notice décrit les informations que l’application utilise pour gérer les accès,
+            les demandes d’accès, les clients et les devis, ainsi que les opérations de PDF,
+            d’envoi de devis et de suivi. Les champs collectés sont ceux nécessaires à ces
+            fonctionnalités ; n’ajoutez pas de données personnelles qui ne sont pas utiles au
+            traitement du devis ou à la gestion du compte.
           </p>
         </section>
 
@@ -489,9 +493,10 @@ function PrivacyPage() {
           </div>
           <p>
             Le code peut envoyer un devis en pièce jointe PDF et des relances par e-mail à l’adresse
-            enregistrée sur le devis. L’envoi dépend de la configuration SMTP de l’environnement ;
-            le fournisseur et les règles de conservation de ses journaux ne sont pas déterminés par
-            le dépôt.
+            enregistrée sur le devis. Ces envois utilisent le service SMTP configuré pour
+            l’application. La page Support technique ouvre séparément un brouillon de message
+            adressé à l’administrateur ; ce message n’est envoyé qu’après confirmation par
+            l’utilisateur.
           </p>
         </section>
 
@@ -500,9 +505,9 @@ function PrivacyPage() {
             <h2>Hébergement et ressources externes</h2>
           </div>
           <ul className="privacy-list">
-            <li>Render est la plateforme déclarée pour l’API, le frontend statique, PostgreSQL, les tâches planifiées et le stockage PDF. La région effective reste à confirmer dans le compte Render.</li>
+            <li>Les services de production déclarés dans Render comprennent l’API, le frontend statique, PostgreSQL, les tâches planifiées et le disque persistant utilisé pour les PDF.</li>
             <li>Le frontend charge les polices Inter et Material Symbols depuis Google Fonts.</li>
-            <li>Les e-mails utilisent un serveur SMTP configuré par variables d’environnement ; le fournisseur effectivement retenu doit être confirmé dans Render.</li>
+            <li>Les e-mails métier utilisent le serveur SMTP configuré dans l’environnement de production.</li>
             <li>Aucun modèle ou parcours d’authentification client final n’a été trouvé dans le code audité.</li>
           </ul>
         </section>
@@ -515,21 +520,20 @@ function PrivacyPage() {
             Des routes de suppression administrative existent pour les comptes, les demandes
             d’accès et les devis, mais aucune procédure d’exercice des droits ni aucun export global
             n’est défini. La suppression d’un compte peut aussi être contrainte par les références
-            conservées dans les journaux. Aucun calendrier de conservation n’est défini dans le code ;
-            la durée réelle des bases, journaux et sauvegardes doit être vérifiée auprès de
-            l’organisation et des fournisseurs concernés.
+            conservées dans les journaux. L’application ne définit pas de purge automatique ni de
+            durée de conservation pour les comptes, les devis et les PDF ; leur suppression suit
+            les actions administratives et les règles de gestion des services d’hébergement.
           </p>
         </section>
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <h2>Informations à valider</h2>
+            <h2>Contact relatif aux données</h2>
           </div>
           <p>
-            L’identité et les coordonnées du responsable du traitement, les finalités et bases
-            juridiques, les destinataires et transferts, les durées de conservation, les modalités
-            d’exercice des droits et le contact dédié doivent être fournis et validés par
-            l’organisation avant publication.
+            Pour toute question concernant les informations traitées dans ProQuote ERP, contactez
+            l’administrateur de l’application à l’adresse{' '}
+            <a href={`mailto:${privacyContactEmail}`}>{privacyContactEmail}</a>.
           </p>
         </section>
 
@@ -539,6 +543,9 @@ function PrivacyPage() {
 }
 
 function SupportPage() {
+  const supportEmail = 'tridentoilservices@gmail.com'
+  const supportUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${supportEmail}&su=${encodeURIComponent('Assistance technique — ProQuote ERP')}&body=${encodeURIComponent('Bonjour,\n\nPage concernée :\nAction effectuée :\nMessage affiché :\n\nMerci de ne pas inclure de mot de passe ni de jeton d’accès.')}`
+
   return (
     <main className="legal-page-shell support-page-shell">
       <header className="legal-page-topbar">
@@ -598,10 +605,21 @@ function SupportPage() {
             <h2>Contacter l’assistance</h2>
           </div>
           <p>
-            Aucun formulaire ni adresse e-mail d’assistance dédiée n’est configuré dans ProQuote
-            ERP. Pour faciliter le diagnostic, transmettez à l’administrateur de votre organisation
-            la page concernée, l’action effectuée et le message d’erreur, sans inclure de mot de
-            passe ni de jeton d’accès.
+            Pour toute difficulté, contactez l’administrateur du système. Le message préparé
+            inclut les informations utiles au diagnostic ; vérifiez son contenu et envoyez-le
+            depuis votre messagerie.
+          </p>
+          <a
+            className="support-contact-button"
+            href={supportUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">mail</span>
+            Contacter le support technique
+          </a>
+          <p>
+            Adresse de l’administrateur : <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
           </p>
         </section>
       </div>

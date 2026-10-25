@@ -221,6 +221,10 @@
         overflow-wrap: anywhere;
       }
 
+      .detail-card .multiline {
+        white-space: pre-line;
+      }
+
       tbody tr:nth-child(even) {
         background: rgba(30, 158, 165, 0.02);
       }
@@ -417,6 +421,12 @@
               <section class="detail-card detail-card--incoterm">
                 <h2>Incoterm</h2>
                 <p>{{ incoterm_label }}</p>
+              </section>
+            {% endif %}
+            {% if quotation.special_conditions %}
+              <section class="detail-card">
+                <h2>Conditions particulières</h2>
+                <p class="multiline">{{ quotation.special_conditions }}</p>
               </section>
             {% endif %}
           </div>

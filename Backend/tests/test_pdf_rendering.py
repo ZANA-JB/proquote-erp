@@ -91,6 +91,19 @@ def test_generated_pdf_uses_configured_company_and_real_quotation_values(
     assert "Libellé" in text
     assert "PU HT" in text
     assert "Montant HT" in text
+    assert "Conditions particulières" not in text
+
+
+def test_generated_pdf_includes_saved_special_conditions(isolated_pdf_environment):
+    quotation = _quotation(
+        [_article("Prestation avec conditions", "1", "1000")],
+        special_conditions="Règlement selon les conditions convenues au devis.",
+    )
+
+    _, text = _generate_and_read_pdf(quotation, isolated_pdf_environment)
+
+    assert "Conditions particulières" in text
+    assert "Règlement selon les conditions convenues au devis." in text
 
 
 def test_generated_pdf_restores_company_logo_and_background_watermark(
