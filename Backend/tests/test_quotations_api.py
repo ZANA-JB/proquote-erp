@@ -162,6 +162,23 @@ def test_create_quotation_persists_vat_and_payment_terms():
     assert data["payment_method"] == "Virement bancaire"
     assert data["payment_terms"] == "30 jours"
 
+    rate_update = client.put(
+        f"/api/v1/quotations/{data['id']}",
+        headers=headers,
+        json={"vat_rate": 12},
+    )
+    assert rate_update.status_code == 200, rate_update.text
+    assert rate_update.json()["vat_code"] == "CODE-TEST"
+    assert Decimal(rate_update.json()["vat_rate"]) == Decimal("12.00")
+    assert Decimal(rate_update.json()["vat_amount"]) == Decimal("24.00")
+
+    invalid_code_update = client.put(
+        f"/api/v1/quotations/{data['id']}",
+        headers=headers,
+        json={"vat_code": "   "},
+    )
+    assert invalid_code_update.status_code == 422
+
     updated = client.put(
         f"/api/v1/quotations/{data['id']}",
         headers=headers,

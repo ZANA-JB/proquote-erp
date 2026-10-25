@@ -223,16 +223,20 @@ def update_quotation(
         quotation.vat_rate = None
     elif payload.vat_mode == "avec_tva":
         quotation.vat_mode = "avec_tva"
-        quotation.vat_code = payload.vat_code
-        quotation.vat_rate = payload.vat_rate
+        if "vat_code" in payload.model_fields_set:
+            quotation.vat_code = payload.vat_code
+        if "vat_rate" in payload.model_fields_set:
+            quotation.vat_rate = payload.vat_rate
     elif payload.vat_code is not None or payload.vat_rate is not None:
         if quotation.vat_mode != "avec_tva":
             raise HTTPException(
                 status_code=422,
                 detail="Set vat_mode to avec_tva before updating VAT code or rate",
             )
-        quotation.vat_code = payload.vat_code
-        quotation.vat_rate = payload.vat_rate
+        if "vat_code" in payload.model_fields_set:
+            quotation.vat_code = payload.vat_code
+        if "vat_rate" in payload.model_fields_set:
+            quotation.vat_rate = payload.vat_rate
     if "payment_method" in payload.model_fields_set:
         quotation.payment_method = (
             payload.payment_method.strip() or None if payload.payment_method else None

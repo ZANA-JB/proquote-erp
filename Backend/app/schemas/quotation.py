@@ -57,6 +57,11 @@ class QuotationUpdate(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+    @field_validator("vat_code")
+    @classmethod
+    def strip_vat_code(cls, value):
+        return value.strip() if value is not None else None
+
     @model_validator(mode="after")
     def validate_vat_fields(self):
         if self.vat_mode == "avec_tva" and (not self.vat_code or self.vat_rate is None):
