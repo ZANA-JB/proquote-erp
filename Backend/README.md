@@ -51,7 +51,7 @@ réalisé ou confirmé.
 - Le disque persistant Render est monté sur `/var/data`; les PDF sont enregistrés sous `/var/data/pdfs`.
 - Le Cron horaire appelle `python -m app.tasks.run_expiration_job`. Le Cron quotidien
   appelle `python -m app.tasks.run_payment_reminders_job`.
-- Après le premier déploiement, ouvrir le Shell du service API et lancer `python -m app.bootstrap_admin` pour créer le premier administrateur. Le mot de passe est saisi de façon interactive et n'est pas conservé dans le dépôt.
+- Dans le Shell du service API Render (conteneur Linux, pas PowerShell Windows), lancer `python -m app.bootstrap_admin`. Le script crée le premier administrateur si aucun n'existe. S'il existe déjà un compte administrateur à l'adresse saisie, il réinitialise uniquement son mot de passe, conserve son identifiant et ses données liées, puis invalide ses sessions actives. Confirmer l'adresse exacte à l'invite ; le mot de passe est saisi sans affichage. Si un administrateur existe sous une autre adresse, utiliser cette adresse exacte. Le script ne supprime aucun compte ni aucune donnée métier.
 - Renseigner SMTP et `COMPANY_BANK_DETAILS` dans les variables privées du Dashboard Render, jamais dans le dépôt.
 - `VITE_RENDER_DEPLOYED` reste à `false` dans le blueprint. Le passer à `true` et redéployer le frontend uniquement après vérification que l'API, PostgreSQL et le frontend sont réellement opérationnels sur Render.
 - Les migrations créent le schéma PostgreSQL mais ne transfèrent pas les lignes de `test.db`. Toute reprise de données existantes doit être planifiée et vérifiée séparément avant la bascule.
