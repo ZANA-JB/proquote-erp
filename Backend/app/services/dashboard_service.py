@@ -1,7 +1,7 @@
 """Calcule les indicateurs depuis les données réelles de la base."""
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func, case
+from sqlalchemy import func
 from typing import List, Optional
 from datetime import date
 
@@ -10,7 +10,6 @@ from app.schemas.dashboard import DashboardSummary, ChartDataPoint
 
 
 def get_summary(db: Session, user_id: Optional[str] = None, role: Optional[str] = None) -> DashboardSummary:
-    q = db.query(func.count(Quotation.id))
     if user_id and role == 'COLLABORATEUR':
         total = db.query(func.count(Quotation.id)).filter(Quotation.created_by == user_id).scalar() or 0
     else:
@@ -34,8 +33,9 @@ def get_summary(db: Session, user_id: Optional[str] = None, role: Optional[str] 
     else:
         total_amount = db.query(func.coalesce(func.sum(Quotation.total_amount), 0)).scalar() or 0
 
-    if sent > 0:
-        conversion_rate = accepted / sent
+    issued = sent + accepted + refused + expired
+    if issued > 0:
+        conversion_rate = accepted / issued
     else:
         conversion_rate = 0.0
 

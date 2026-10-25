@@ -5,6 +5,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.security import get_password_hash
 from app.models.article import Article
@@ -13,7 +14,13 @@ from app.models.user import User, UserRole
 from app.services.reference_service import generate_reference
 
 
-def seed_admin(password: str = "admin123"):
+def _ensure_demo_seeding_is_allowed() -> None:
+    if settings.ENVIRONMENT.lower() == "production":
+        raise RuntimeError("Demo seeding is disabled in production.")
+
+
+def seed_admin(password: str):
+    _ensure_demo_seeding_is_allowed()
     if not password:
         raise ValueError("A seed password must be provided at runtime.")
 
@@ -68,6 +75,7 @@ def seed_admin(password: str = "admin123"):
         db.close()
 
 def seed_demo_quotations() -> None:
+    _ensure_demo_seeding_is_allowed()
     db: Session = SessionLocal()
     try:
         users = {

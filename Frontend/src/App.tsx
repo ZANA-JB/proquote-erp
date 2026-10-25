@@ -9,6 +9,16 @@ const trimmedApiUrl = securedApiUrl.replace(/\/$/, '')
 const API_BASE_URL = trimmedApiUrl.endsWith('/api/v1') ? trimmedApiUrl : `${trimmedApiUrl}/api/v1`
 let activeAccessToken: string | null = null
 
+async function readApiResponse<T>(response: Response, context: string): Promise<T> {
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null) as { detail?: unknown } | null
+    const detail = typeof payload?.detail === 'string' ? payload.detail : `${context} (HTTP ${response.status}).`
+    throw new Error(detail)
+  }
+
+  return response.json() as Promise<T>
+}
+
 type CurrentView = 'login' | 'accessRequest' | 'adminDashboard' | 'legal' | 'privacy' | 'support'
 type AdminPage = 'dashboard' | 'devis' | 'users' | 'roles' | 'reports' | 'settings' | 'help'
 
@@ -629,16 +639,61 @@ function SupportPage() {
 function App() {
   const [currentView, setCurrentView] = useState<CurrentView>(getInitialCurrentView)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [storedAccessToken] = useState(() => sessionStorage.getItem('access_token'))
+  const [isRestoringSession, setIsRestoringSession] = useState(Boolean(storedAccessToken))
+  const [sessionError, setSessionError] = useState('')
   const isAuthenticated = Boolean(currentUser)
 
   useEffect(() => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('token_type')
-    localStorage.removeItem('user')
-  }, [])
+    let cancelled = false
+    const token = storedAccessToken
+    activeAccessToken = token
 
-  const handleLogout = async () => {
+    if (!token) {
+      return () => {
+        cancelled = true
+      }
+    }
+
+    const restoreSession = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: { Authorization: 'Bearer ' + token },
+        })
+        if (response.status === 401) {
+          sessionStorage.removeItem('access_token')
+          activeAccessToken = null
+          setSessionError('Votre session a expiré. Veuillez vous reconnecter.')
+          return
+        }
+
+        const user = await readApiResponse<User>(response, 'Impossible de vérifier la session.')
+        if (!user.id || !user.role || !user.is_active) {
+          throw new Error('Le profil reçu ne permet pas de rétablir une session valide.')
+        }
+        if (!cancelled) {
+          setCurrentUser(user)
+          setCurrentView((view) => view === 'login' ? 'adminDashboard' : view)
+          setSessionError('')
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSessionError(error instanceof Error ? error.message : 'Impossible de vérifier la session.')
+        }
+      } finally {
+        if (!cancelled) setIsRestoringSession(false)
+      }
+    }
+
+    void restoreSession()
+    return () => {
+      cancelled = true
+    }
+  }, [storedAccessToken])
+
+  const handleLogout = async (message = '') => {
     const token = activeAccessToken
+    let logoutError = ''
     if (token) {
       try {
         await fetch(`${API_BASE_URL}/auth/logout`, {
@@ -646,14 +701,13 @@ function App() {
           headers: { Authorization: `Bearer ${token}` },
         })
       } catch {
-        // The in-memory token is cleared even if server revocation is unreachable.
+        logoutError = 'La session locale a été fermée, mais le serveur n’a pas pu révoquer le jeton.'
       }
     }
     activeAccessToken = null
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('token_type')
-    localStorage.removeItem('user')
+    sessionStorage.removeItem('access_token')
     setCurrentUser(null)
+    setSessionError(message || logoutError)
     setCurrentView('login')
   }
 
@@ -673,12 +727,17 @@ function App() {
     return <SupportPage />
   }
 
+  if (isRestoringSession) {
+    return <main className="session-loading" role="status">Vérification de la session...</main>
+  }
+
   if (currentView === 'adminDashboard' && isAuthenticated && currentUser) {
     return <AdminDashboardPage currentUser={currentUser} onLogout={handleLogout} onUserChange={setCurrentUser} />
   }
 
   return (
     <LoginPage
+      initialError={sessionError}
       onOpenAccessRequest={() => setCurrentView('accessRequest')}
       onAuthenticated={(user) => {
         setCurrentUser(user)
@@ -689,15 +748,17 @@ function App() {
 }
 
 function LoginPage({
+  initialError,
   onOpenAccessRequest,
   onAuthenticated,
 }: {
+  initialError: string
   onOpenAccessRequest: () => void
   onAuthenticated: (user: User) => void
 }) {
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState(initialError)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -711,7 +772,7 @@ function LoginPage({
     }
 
     const email = emailInput.value.trim()
-    const password = passwordInput.value.trim()
+    const password = passwordInput.value
 
     if (!email || !password) {
       setErrorMessage('Veuillez saisir votre email et votre mot de passe.')
@@ -758,6 +819,7 @@ function LoginPage({
       }
 
       activeAccessToken = token
+      sessionStorage.setItem('access_token', token)
       onAuthenticated(user)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Une erreur est survenue lors de la connexion.'
@@ -906,7 +968,7 @@ function AccessRequestPage({ onBackToLogin }: { onBackToLogin: () => void }) {
 
     const nomComplet = form.nomComplet.trim()
     const email = form.email.trim()
-    const motDePasse = form.motDePasse.trim()
+    const motDePasse = form.motDePasse
     const profilSouhaite = form.profilSouhaite
 
     if (!nomComplet) {
@@ -919,7 +981,7 @@ function AccessRequestPage({ onBackToLogin }: { onBackToLogin: () => void }) {
       return
     }
 
-    if (!motDePasse) {
+    if (!motDePasse.trim()) {
       setErrorMessage('Le mot de passe est obligatoire.')
       return
     }
@@ -1090,7 +1152,7 @@ function AdminDashboardPage({
   onUserChange,
 }: {
   currentUser: User
-  onLogout: () => void
+  onLogout: (message?: string) => void
   onUserChange: (user: User) => void
 }) {
   const [activePage, setActivePage] = useState<AdminPage>(() => getInitialAdminPage(currentUser.role))
@@ -1105,6 +1167,7 @@ function AdminDashboardPage({
   const [quotationForm, setQuotationForm] = useState<QuotationFormState>(defaultQuotationForm)
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [dashboardDataLoaded, setDashboardDataLoaded] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusMessage, setStatusMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
@@ -1212,7 +1275,11 @@ function AdminDashboardPage({
         throw new Error(data?.detail || 'Impossible de modifier le mot de passe.')
       }
 
-      activeAccessToken = data?.access_token || null
+      if (typeof data?.access_token !== 'string' || !data.access_token) {
+        throw new Error('Le mot de passe a été changé, mais le serveur n’a pas renvoyé de nouveau jeton.')
+      }
+      activeAccessToken = data.access_token
+      sessionStorage.setItem('access_token', data.access_token)
       setPasswordForm({ old_password: '', new_password: '', confirm_password: '' })
       setPasswordStatus({ type: 'success', message: data?.message || 'Mot de passe modifié avec succès.' })
     } catch (error) {
@@ -1247,42 +1314,35 @@ function AdminDashboardPage({
           requests.push(fetch(`${API_BASE_URL}/access-requests`, { headers }))
         }
 
-        const [summaryResponse, quotationsResponse, chartResponse, usersResponse, accessRequestsResponse] = await Promise.all(requests)
-
-        if (summaryResponse.ok) {
-          const summaryPayload = (await summaryResponse.json().catch(() => defaultSummary)) as DashboardSummary
-          setSummary(summaryPayload || defaultSummary)
+        const responses = await Promise.all(requests)
+        if (responses.some((response) => response.status === 401)) {
+          onLogout('Votre session a expiré. Veuillez vous reconnecter.')
+          return
         }
 
-        if (isAdmin && usersResponse?.ok) {
-          const usersPayload = (await usersResponse.json().catch(() => [])) as User[]
-          setUsers(usersPayload || [])
-        }
-
-        if (isAdmin && accessRequestsResponse?.ok) {
-          const requestPayload = (await accessRequestsResponse.json().catch(() => [])) as AccessRequestItem[]
-          setAccessRequests(requestPayload || [])
-        }
-
-        if (quotationsResponse.ok) {
-          const quotationPayload = (await quotationsResponse.json().catch(() => null)) as PaginatedQuotationResponse | null
-          setQuotations(quotationPayload?.items || [])
-        }
-
-        if (chartResponse.ok) {
-          const chartPayload = (await chartResponse.json().catch(() => [])) as QuotationChartPoint[]
-          setQuotationChart(chartPayload || [])
-        }
-
-        setErrorMessage('')
-      } catch {
-        setSummary(defaultSummary)
+        const [summaryPayload, quotationPayload, chartPayload] = await Promise.all([
+          readApiResponse<DashboardSummary>(responses[0], 'Échec du chargement des statistiques.'),
+          readApiResponse<PaginatedQuotationResponse>(responses[1], 'Échec du chargement des devis.'),
+          readApiResponse<QuotationChartPoint[]>(responses[2], 'Échec du chargement du graphique.'),
+        ])
+        let usersPayload: User[] | null = null
+        let requestPayload: AccessRequestItem[] | null = null
         if (isAdmin) {
-          setUsers([])
-          setAccessRequests([])
+          [usersPayload, requestPayload] = await Promise.all([
+            readApiResponse<User[]>(responses[3], 'Échec du chargement des utilisateurs.'),
+            readApiResponse<AccessRequestItem[]>(responses[4], 'Échec du chargement des demandes d’accès.'),
+          ])
         }
-        setQuotations([])
-        setQuotationChart([])
+
+        setSummary(summaryPayload)
+        setQuotations(quotationPayload.items)
+        setQuotationChart(chartPayload)
+        if (usersPayload) setUsers(usersPayload)
+        if (requestPayload) setAccessRequests(requestPayload)
+        setDashboardDataLoaded(true)
+        setErrorMessage('')
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : 'Impossible de charger les données du tableau de bord.')
       } finally {
         setLoading(false)
       }
@@ -1358,31 +1418,36 @@ function AdminDashboardPage({
       requests.push(fetch(`${API_BASE_URL}/access-requests`, { headers }))
     }
 
-    const [summaryResponse, quotationsResponse, chartResponse, usersResponse, accessRequestsResponse] = await Promise.all(requests)
+    try {
+      const responses = await Promise.all(requests)
+      if (responses.some((response) => response.status === 401)) {
+        onLogout('Votre session a expiré. Veuillez vous reconnecter.')
+        return
+      }
 
-    if (summaryResponse.ok) {
-      const summaryPayload = (await summaryResponse.json().catch(() => defaultSummary)) as DashboardSummary
-      setSummary(summaryPayload || defaultSummary)
-    }
+      const [summaryPayload, quotationPayload, chartPayload] = await Promise.all([
+        readApiResponse<DashboardSummary>(responses[0], 'Échec du chargement des statistiques.'),
+        readApiResponse<PaginatedQuotationResponse>(responses[1], 'Échec du chargement des devis.'),
+        readApiResponse<QuotationChartPoint[]>(responses[2], 'Échec du chargement du graphique.'),
+      ])
+      let usersPayload: User[] | null = null
+      let requestPayload: AccessRequestItem[] | null = null
+      if (isAdmin) {
+        [usersPayload, requestPayload] = await Promise.all([
+          readApiResponse<User[]>(responses[3], 'Échec du chargement des utilisateurs.'),
+          readApiResponse<AccessRequestItem[]>(responses[4], 'Échec du chargement des demandes d’accès.'),
+        ])
+      }
 
-    if (isAdmin && usersResponse?.ok) {
-      const usersPayload = (await usersResponse.json().catch(() => [])) as User[]
-      setUsers(usersPayload || [])
-    }
-
-    if (isAdmin && accessRequestsResponse?.ok) {
-      const requestPayload = (await accessRequestsResponse.json().catch(() => [])) as AccessRequestItem[]
-      setAccessRequests(requestPayload || [])
-    }
-
-    if (quotationsResponse.ok) {
-      const quotationPayload = (await quotationsResponse.json().catch(() => null)) as PaginatedQuotationResponse | null
-      setQuotations(quotationPayload?.items || [])
-    }
-
-    if (chartResponse.ok) {
-      const chartPayload = (await chartResponse.json().catch(() => [])) as QuotationChartPoint[]
-      setQuotationChart(chartPayload || [])
+      setSummary(summaryPayload)
+      setQuotations(quotationPayload.items)
+      setQuotationChart(chartPayload)
+      if (usersPayload) setUsers(usersPayload)
+      if (requestPayload) setAccessRequests(requestPayload)
+      setDashboardDataLoaded(true)
+      setErrorMessage('')
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Impossible de mettre à jour les données.')
     }
   }
 
@@ -1390,8 +1455,8 @@ function AdminDashboardPage({
     const email = window.prompt('Email du nouvel utilisateur')?.trim()
     if (!email) return
 
-    const password = window.prompt('Mot de passe du nouvel utilisateur')?.trim()
-    if (!password) return
+    const password = window.prompt('Mot de passe du nouvel utilisateur')
+    if (!password || !password.trim()) return
     if (password.length < 12 || password.length > 128) {
       window.alert('Le mot de passe doit contenir entre 12 et 128 caractères.')
       return
@@ -2044,7 +2109,7 @@ function AdminDashboardPage({
 
             <div className="stat-card">
               <div>
-                <p>CA mensuel</p>
+                <p>Montant total des devis</p>
                 <h3>{formatCurrency(summary.total_amount)}</h3>
                 <div className="stat-trend up">
                   <span className="material-symbols-outlined">payments</span>
@@ -3015,7 +3080,7 @@ function AdminDashboardPage({
           </nav>
 
           <div className="sidebar-footer">
-            <button type="button" className="nav-item logout" onClick={onLogout}>
+            <button type="button" className="nav-item logout" onClick={() => { void onLogout() }}>
               <span className="material-symbols-outlined">logout</span>
               <span>Déconnexion</span>
             </button>
@@ -3080,7 +3145,11 @@ function AdminDashboardPage({
         <div className="dashboard-container">
           {statusMessage ? <p className="success-message dashboard-message">{statusMessage}</p> : null}
           {errorMessage ? <p className="form-error dashboard-message">{errorMessage}</p> : null}
-          {renderCurrentPage()}
+          {activePage === 'dashboard' && !dashboardDataLoaded ? (
+            <p className="dashboard-message" role={loading ? 'status' : 'alert'}>
+              {loading ? 'Chargement des données du tableau de bord…' : 'Les données du tableau de bord ne sont pas disponibles.'}
+            </p>
+          ) : renderCurrentPage()}
           {activePage !== 'dashboard' && activePage !== 'roles' ? <div className="table-footer search-footer"><span>{renderSearchResultsCount()}</span></div> : null}
         </div>
       </main>

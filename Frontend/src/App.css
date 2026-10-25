@@ -1,3 +1,12 @@
+.session-loading {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  color: #191c1e;
+  background: #f8f9fb;
+  font-family: 'Inter', sans-serif;
+}
+
 .login-page {
   display: flex;
   width: 100%;
