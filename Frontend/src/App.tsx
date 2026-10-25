@@ -556,13 +556,53 @@ function SupportPage() {
         <div className="legal-page-heading">
           <p>PROQUOTE ERP</p>
           <h1>Support technique</h1>
+          <span>Repères pratiques pour les demandes d’accès, les devis et les PDF.</span>
         </div>
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <h2>Informations indisponibles</h2>
+            <h2>Créer un devis</h2>
           </div>
-          <p>Les informations de support technique ne sont pas disponibles.</p>
+          <p>
+            Connectez-vous, ouvrez la rubrique Devis puis choisissez « Nouveau devis ». Renseignez
+            les informations du client, les dates et les conditions de livraison, puis ajoutez au
+            moins une ligne avec sa désignation, sa quantité et son prix unitaire. Le total est
+            calculé par l’application à partir des lignes du devis.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <div className="legal-section-heading">
+            <h2>Télécharger un PDF</h2>
+          </div>
+          <p>
+            Dans la rubrique Devis, utilisez l’action de téléchargement associée au devis. Le PDF
+            reprend les informations enregistrées sur ce devis et les coordonnées de l’entreprise
+            configurées pour l’application.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <div className="legal-section-heading">
+            <h2>Connexion et accès</h2>
+          </div>
+          <p>
+            Une demande d’accès doit être approuvée par un administrateur avant la connexion. Si
+            votre compte est inactif ou si vous ne pouvez plus vous connecter, contactez
+            l’administrateur de votre organisation par son canal habituel.
+          </p>
+        </section>
+
+        <section className="legal-section">
+          <div className="legal-section-heading">
+            <h2>Contacter l’assistance</h2>
+          </div>
+          <p>
+            Aucun formulaire ni adresse e-mail d’assistance dédiée n’est configuré dans ProQuote
+            ERP. Pour faciliter le diagnostic, transmettez à l’administrateur de votre organisation
+            la page concernée, l’action effectuée et le message d’erreur, sans inclure de mot de
+            passe ni de jeton d’accès.
+          </p>
         </section>
       </div>
     </main>
@@ -2990,7 +3030,11 @@ function AdminDashboardPage({
 
                 <div className="issue-block">
                   <h5>Assistance technique</h5>
-                  <p>Les informations de support technique ne sont pas disponibles. <a href="/support-technique">Consulter la page Support technique</a>.</p>
+                  <p>
+                    Consultez la <a href="/support-technique">page Support technique</a> pour les
+                    consignes sur les devis, les PDF et les accès. Aucun contact dédié n’est
+                    configuré dans l’application.
+                  </p>
                 </div>
               </div>
             </div>

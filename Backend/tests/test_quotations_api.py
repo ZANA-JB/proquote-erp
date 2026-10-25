@@ -1,9 +1,12 @@
 from decimal import Decimal
+from io import BytesIO
 
 import pytest
 from fastapi.testclient import TestClient
+from PyPDF2 import PdfReader
 
 from app.main import app
+from app.core.config import settings
 from app.core.seed import seed_admin
 from app.services.pdf_service import generate_pdf, _number_to_words_fr
 
@@ -114,6 +117,51 @@ def test_create_quotation_persists_incoterm_value():
     assert retrieved.json()["total_amount"] == 200
 
 
+def test_download_quotation_pdf_returns_generated_document(monkeypatch, tmp_path):
+    monkeypatch.setattr(settings, "PDF_STORAGE_PATH", str(tmp_path))
+    seed_admin("admin123")
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "admin123"},
+    )
+    assert login.status_code == 200, login.text
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    created = client.post(
+        "/api/v1/quotations/",
+        headers=headers,
+        json={
+            "client_name": "Client PDF API",
+            "client_email": "client-pdf@example.com",
+            "validity_date": "2026-12-31",
+            "delivery_duration": "10 jours",
+            "incoterm": "DDP",
+            "articles": [
+                {
+                    "designation": "Prestation via route API",
+                    "quantity": 2,
+                    "unit": "h",
+                    "unit_price": 1250,
+                }
+            ],
+        },
+    )
+    assert created.status_code == 200, created.text
+
+    downloaded = client.get(
+        f"/api/v1/quotations/{created.json()['id']}/pdf",
+        headers=headers,
+    )
+
+    assert downloaded.status_code == 200
+    assert downloaded.headers["content-type"] == "application/pdf"
+    assert downloaded.content.startswith(b"%PDF-")
+    reader = PdfReader(BytesIO(downloaded.content))
+    text = " ".join(" ".join(page.extract_text() or "" for page in reader.pages).split())
+    assert "Prestation via route API" in text
+    assert "2 500 FCFA" in text
+
+
 def test_pdf_renders_incoterm_value_instead_of_approval_block():
     from app.services.pdf_service import render_quotation_html
     from app.models.quotation import QuotationStatus
@@ -149,7 +197,7 @@ def test_pdf_renders_incoterm_value_instead_of_approval_block():
     assert "Total TTC" not in html
     assert "Virement bancaire" not in html
     assert "À la commande" not in html
-    assert "Montant</span>" in html
+    assert "Total HT</span>" in html
 
 
 def test_auth_me_returns_current_user_profile_for_each_role():

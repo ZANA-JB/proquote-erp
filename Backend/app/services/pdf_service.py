@@ -4,13 +4,13 @@ import base64
 import mimetypes
 import os
 import re
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
-from typing import List
-from datetime import date
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.core.config import settings
-from app.models.quotation import Incoterm, Quotation
+from app.models.quotation import Quotation
+from app.services.calculation_service import calculate_line_total, calculate_quotation_total
 
 
 TEMPLATE_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -102,22 +102,6 @@ def _format_date(value) -> str:
     return str(value)
 
 
-def _get_status_label(status) -> str:
-    if status is None:
-        return "À préciser"
-    value = status.value if hasattr(status, "value") else status
-    if isinstance(value, str):
-        value = value.strip().upper()
-    mapping = {
-        "BROUILLON": "En attente",
-        "ENVOYEE": "Envoyé",
-        "ACCEPTEE": "Validé",
-        "REFUSEE": "Annulé",
-        "EXPIREE": "Expiré",
-    }
-    return mapping.get(value, str(value))
-
-
 def _normalize_multiline(value: str | None) -> str:
     if not value:
         return ""
@@ -132,6 +116,7 @@ def render_quotation_html(quotation: Quotation) -> str:
     template = env.get_template("quotation_pdf.html")
 
     quotation_total = _get_quotation_total(quotation)
+    articles = list(getattr(quotation, "articles", []) or [])
     return template.render(
         company_name=settings.COMPANY_NAME,
         company_address=_normalize_multiline(settings.COMPANY_ADDRESS),
@@ -142,7 +127,8 @@ def render_quotation_html(quotation: Quotation) -> str:
         quotation_total=quotation_total,
         amount_in_words=_number_to_words_fr(quotation_total),
         incoterm_label=_get_incoterm_label(quotation),
-        quotation_status=_get_status_label(quotation.status),
+        article_line_total=_get_article_line_total,
+        format_quantity=_format_quantity,
         format_date=_format_date,
         format_currency=_format_currency,
     )
@@ -154,78 +140,90 @@ def get_pdf_path(reference: str | None) -> str:
 
 
 def _format_currency(value) -> str:
-    try:
-        return f"{float(value):,.0f}".replace(",", " ") + " FCFA"
-    except (TypeError, ValueError):
-        return "0 FCFA"
+    amount = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    whole_amount = int(amount)
+    fractional_amount = int((abs(amount) - abs(whole_amount)) * 100)
+    formatted = f"{whole_amount:,}".replace(",", " ")
+    if fractional_amount:
+        formatted += f",{fractional_amount:02d}"
+    return f"{formatted} FCFA"
 
 
-def _number_to_words_fr(value: float) -> str:
-    cents = int(round((value - int(value)) * 100))
-    whole = int(value)
+def _format_quantity(value) -> str:
+    quantity = Decimal(str(value))
+    return format(quantity.normalize(), "f")
 
-    if whole == 0:
-        words = "zéro"
-    else:
-        units = [
-            "zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
-            "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize",
-            "dix-sept", "dix-huit", "dix-neuf",
-        ]
-        tens = [
-            "",
-            "",
-            "vingt",
-            "trente",
-            "quarante",
-            "cinquante",
-            "soixante",
-            "soixante-dix",
-            "quatre-vingt",
-            "quatre-vingt-dix",
-        ]
 
-        def under_100(n: int) -> str:
-            if n < 20:
-                return units[n]
-            tens_digit = n // 10
-            unit_digit = n % 10
+def _number_to_words_fr(value: Decimal | float | int) -> str:
+    amount = Decimal(str(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    is_negative = amount < 0
+    amount = abs(amount)
+    whole = int(amount)
+    cents = int((amount - whole) * 100)
+
+    units = [
+        "zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf",
+        "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize",
+        "dix-sept", "dix-huit", "dix-neuf",
+    ]
+    tens = [
+        "",
+        "",
+        "vingt",
+        "trente",
+        "quarante",
+        "cinquante",
+        "soixante",
+        "soixante-dix",
+        "quatre-vingt",
+        "quatre-vingt-dix",
+    ]
+
+    def under_100(n: int) -> str:
+        if n < 20:
+            return units[n]
+        tens_digit = n // 10
+        unit_digit = n % 10
+        if tens_digit in (2, 3, 4, 5, 6):
+            if unit_digit == 1:
+                return f"{tens[tens_digit]} et un"
             if unit_digit == 0:
                 return tens[tens_digit]
-            if tens_digit == 7:
-                return f"soixante-{units[unit_digit]}"
-            if tens_digit == 8:
-                return f"quatre-vingt-{units[unit_digit]}"
-            if tens_digit == 9:
-                if unit_digit == 1:
-                    return "quatre-vingt-onze"
-                return f"quatre-vingt-{units[unit_digit]}"
             return f"{tens[tens_digit]}-{units[unit_digit]}"
+        if tens_digit == 7:
+            remainder = n - 60
+            if remainder == 11:
+                return "soixante et onze"
+            return f"soixante-{units[remainder]}"
+        if n == 80:
+            return "quatre-vingts"
+        return f"quatre-vingt-{units[n - 80]}"
 
-        def under_1000(n: int) -> str:
-            if n < 100:
-                return under_100(n)
-            hundreds = n // 100
-            remainder = n % 100
-            if hundreds == 1 and remainder == 0:
-                return "cent"
-            if hundreds == 1:
-                return f"cent {under_100(remainder)}"
+    def under_1000(n: int) -> str:
+        if n < 100:
+            return under_100(n)
+        hundreds = n // 100
+        remainder = n % 100
+        if hundreds == 1 and remainder == 0:
+            return "cent"
+        if hundreds == 1:
+            return f"cent {under_100(remainder)}"
+        if remainder == 0:
+            return f"{units[hundreds]} cent"
+        return f"{units[hundreds]} cent {under_100(remainder)}"
+
+    def to_words(n: int) -> str:
+        if n < 1000:
+            return under_1000(n)
+        if n < 1_000_000:
+            thousands = n // 1000
+            remainder = n % 1000
+            if thousands == 1 and remainder == 0:
+                return "mille"
             if remainder == 0:
-                return f"{units[hundreds]} cent"
-            return f"{units[hundreds]} cent {under_100(remainder)}"
-
-        def to_words(n: int) -> str:
-            if n < 1000:
-                return under_1000(n)
-            if n < 1_000_000:
-                thousands = n // 1000
-                remainder = n % 1000
-                if thousands == 1 and remainder == 0:
-                    return "mille"
-                if remainder == 0:
-                    return f"{under_1000(thousands)} mille"
-                return f"{under_1000(thousands)} mille {under_1000(remainder)}"
+                return f"{under_1000(thousands)} mille"
+            return f"{under_1000(thousands)} mille {under_1000(remainder)}"
+        if n < 1_000_000_000:
             millions = n // 1_000_000
             remainder = n % 1_000_000
             if remainder == 0:
@@ -235,37 +233,52 @@ def _number_to_words_fr(value: float) -> str:
             if millions == 1:
                 return f"un million {to_words(remainder)}"
             return f"{under_1000(millions)} millions {to_words(remainder)}"
+        billions = n // 1_000_000_000
+        remainder = n % 1_000_000_000
+        scale = "milliard" if billions == 1 else "milliards"
+        if remainder == 0:
+            return f"{to_words(billions)} {scale}"
+        return f"{to_words(billions)} {scale} {to_words(remainder)}"
 
-        words = to_words(whole)
+    words = to_words(whole)
 
+    if is_negative:
+        words = f"moins {words}"
     if cents:
-        return f"{words} FCFA et {cents} centimes"
+        return f"{words} FCFA et {under_1000(cents)} centimes"
     return f"{words} FCFA"
 
 
-def _get_quotation_total(quotation: Quotation) -> float:
-    try:
-        article_total = sum(float(getattr(article, 'line_total', 0) or 0) for article in getattr(quotation, 'articles', []) or [])
-        if article_total:
-            return article_total
-    except Exception:
-        pass
-    try:
-        return float(quotation.total_amount or 0)
-    except Exception:
-        return 0.0
+def _get_article_line_total(article) -> Decimal:
+    return calculate_line_total(
+        Decimal(str(article.quantity)),
+        Decimal(str(article.unit_price)),
+    )
 
 
-def _get_incoterm_label(quotation: Quotation) -> str:
+def _get_quotation_total(quotation: Quotation) -> Decimal:
+    articles = list(getattr(quotation, "articles", []) or [])
+    if not articles:
+        return Decimal(str(getattr(quotation, "total_amount", 0) or 0)).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+    return calculate_quotation_total(
+        {"line_total": _get_article_line_total(article)}
+        for article in articles
+    )
+
+
+def _get_incoterm_label(quotation: Quotation) -> str | None:
     incoterm = getattr(quotation, "incoterm", None)
     if incoterm is None:
-        return "À définir"
+        return None
     if hasattr(incoterm, "value"):
         incoterm = incoterm.value
     if isinstance(incoterm, str):
         incoterm = incoterm.strip()
     if not incoterm:
-        return "À définir"
+        return None
     return incoterm
 
 

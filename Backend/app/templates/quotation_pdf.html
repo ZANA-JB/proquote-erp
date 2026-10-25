@@ -3,68 +3,45 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DEVIS - {{ company_name }}</title>
+    <title>Devis {{ quotation.reference or "" }} - {{ company_name }}</title>
     <style>
       @page {
         size: A4;
-        margin: 0;
-        background: #ffffff;
+        margin: 12mm 13mm 16mm;
+
+        @bottom-right {
+          content: "Page " counter(page) " / " counter(pages);
+          color: #64748b;
+          font-size: 8pt;
+        }
       }
 
       :root {
-        --paper-bg: #edf1f2;
-        --page-bg: #ffffff;
-        --line: #d9dfe2;
-        --teal: #1e9ea5;
-        --teal-dark: #0c7d89;
-        --navy: #0D4047;
-        --text: #1f2937;
-        --muted: #6b7280;
-        --soft: #eaf2f3;
+        --teal: #168c94;
+        --teal-dark: #116d74;
+        --navy: #173b50;
+        --text: #202b35;
+        --muted: #5f6b76;
+        --line: #d8e0e5;
+        --soft: #f2f7f8;
       }
 
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
 
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
-        background: var(--page-bg);
-        font-family: Arial, Helvetica, sans-serif;
         color: var(--text);
-      }
-
-      body {
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
-        padding: 0;
+        background: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9pt;
       }
 
       .a4-page {
-        position: relative;
-        width: 210mm;
-        min-height: 297mm;
-        background: transparent;
-        overflow: hidden;
-        padding: 10mm 10mm 6mm 10mm;
-      }
-
-      .watermark {
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        width: 165%;
-        max-width: 175%;
-        opacity: 0.12;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-        z-index: 0;
-      }
-
-      .content {
-        position: relative;
-        z-index: 1;
-        height: 100%;
+        width: 100%;
       }
 
       .header {
@@ -72,280 +49,384 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 12mm;
-        margin-bottom: 7mm;
+        padding-bottom: 6mm;
+        border-bottom: 2px solid var(--teal);
+      }
+
+      .company-block,
+      .right-block {
+        min-width: 0;
       }
 
       .company-block {
-        width: 48%;
+        width: 54%;
       }
 
       .company-brand {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 5mm;
+        gap: 3mm;
+        margin-bottom: 3mm;
       }
 
       .company-logo {
-        width: 88px;
-        height: 88px;
+        width: 18mm;
+        height: 18mm;
         object-fit: contain;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.6);
       }
 
       .brand-name {
-        font-weight: 700;
-        font-size: 14px;
-        letter-spacing: 0.06em;
         color: var(--navy);
-        text-transform: uppercase;
+        font-size: 14pt;
+        line-height: 1.2;
+        font-weight: 700;
+        overflow-wrap: anywhere;
       }
 
       .company-details {
-        font-size: 9.5px;
-        line-height: 1.5;
-        color: #1f2937;
+        color: var(--muted);
+        font-size: 8.5pt;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
       }
 
-      .company-details strong {
-        font-weight: 700;
+      .company-details p {
+        margin: 1mm 0 0;
       }
 
       .right-block {
-        width: 42%;
+        width: 43%;
         text-align: right;
       }
 
       .title {
-        margin: 0;
-        font-size: 34px;
+        margin: 0 0 4mm;
+        color: var(--teal-dark);
+        font-size: 28pt;
         line-height: 1;
-        font-weight: 800;
         letter-spacing: 0.04em;
-        color: var(--teal);
-      }
-
-      .subtitle {
-        margin: 2mm 0 6mm 0;
-        font-size: 12px;
-        color: var(--muted);
-        font-style: italic;
       }
 
       .quote-meta {
         display: inline-block;
-        width: 100%;
-        max-width: 68mm;
-        font-size: 10px;
-        line-height: 1.5;
+        max-width: 100%;
         text-align: left;
+        font-size: 8.5pt;
+        line-height: 1.5;
       }
 
       .quote-meta p {
-        margin: 0 0 2px 0;
-      }
-
-      .quote-meta strong {
-        font-weight: 700;
+        margin: 0 0 1mm;
       }
 
       .client-block {
-        margin-top: 8mm;
-        text-align: right;
-        font-size: 10px;
+        margin: 7mm 0 0 auto;
+        padding: 3mm 4mm;
+        max-width: 100%;
+        border-right: 3px solid var(--teal);
+        background: var(--soft);
+        text-align: left;
+        overflow-wrap: anywhere;
+      }
+
+      .client-label {
+        margin: 0 0 1mm;
+        color: var(--muted);
+        font-size: 7.5pt;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
       }
 
       .client-name {
         margin: 0;
-        font-size: 18px;
+        color: var(--navy);
+        font-size: 12pt;
         font-weight: 700;
-        color: var(--teal-dark);
       }
 
-      .client-address {
-        margin: 1mm 0 0 0;
+      .client-detail {
+        margin: 1mm 0 0;
         color: var(--muted);
+        font-size: 8pt;
+        line-height: 1.4;
+      }
+
+      main {
+        margin-top: 7mm;
       }
 
       table {
         width: 100%;
         border-collapse: collapse;
         table-layout: fixed;
-        background: #fff;
       }
 
-      th, td {
-        border-bottom: 1px solid var(--line);
-        padding: 3px 5px;
-        font-size: 8.8px;
+      thead {
+        display: table-header-group;
+      }
+
+      tr {
+        break-inside: avoid;
+      }
+
+      th,
+      td {
+        padding: 2.5mm 2mm;
+        border: 1px solid var(--line);
         vertical-align: top;
+        font-size: 8pt;
       }
 
-      main > table th,
-      main > table td {
-        border: 1px solid #aebbc0;
-      }
-
-      thead th {
-        background: var(--teal);
+      th {
         color: #fff;
+        background: var(--navy);
+        border-color: var(--navy);
         font-weight: 700;
         text-align: left;
-        padding: 4px 6px;
-        border-color: var(--teal-dark);
       }
 
-      thead th:nth-child(1) { width: 8%; }
-      thead th:nth-child(2) { width: 42%; }
-      thead th:nth-child(3), thead th:nth-child(4), thead th:nth-child(5), thead th:nth-child(6) { width: 10%; }
-      thead th:nth-child(7) { width: 8%; }
+      .column-number { width: 7%; }
+      .column-description { width: 39%; }
+      .column-quantity { width: 10%; }
+      .column-unit { width: 10%; }
+      .column-unit-price { width: 17%; }
+      .column-line-total { width: 17%; }
 
-      td:nth-child(3), td:nth-child(4), td:nth-child(5), td:nth-child(6), td:nth-child(7) {
+      .cell-number,
+      .cell-quantity,
+      .cell-unit,
+      .cell-money {
+        white-space: nowrap;
+      }
+
+      .cell-number,
+      .cell-quantity,
+      .cell-unit {
+        text-align: center;
+      }
+
+      .cell-money {
         text-align: right;
       }
 
-      tbody tr:nth-child(even) {
-        background: rgba(30, 158, 165, 0.02);
-      }
-
       .article-name {
-        font-weight: 700;
-        color: #1f2937;
+        overflow-wrap: anywhere;
       }
 
-      .article-sub {
+      tbody tr:nth-child(even) {
+        background: #f8fafb;
+      }
+
+      .document-summary {
+        display: flex;
+        align-items: flex-start;
+        gap: 8mm;
+        margin-top: 7mm;
+        break-inside: avoid;
+      }
+
+      .summary-left,
+      .summary-right {
+        min-width: 0;
+      }
+
+      .summary-left {
+        width: 57%;
+      }
+
+      .summary-right {
+        width: 43%;
+      }
+
+      .amount-in-words {
+        margin: 0;
+        padding: 3mm;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 8pt;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+
+      .amount-in-words strong {
         display: block;
-        margin-top: 1mm;
+        margin-bottom: 1mm;
+        color: var(--text);
+      }
+
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 4mm;
+        padding: 3mm 0;
+        border-bottom: 1px solid var(--line);
+        font-size: 10pt;
+      }
+
+      .total-row strong {
+        color: var(--navy);
+        text-align: right;
+      }
+
+      .total-row--grand {
+        border-bottom: 2px solid var(--teal);
+        color: var(--teal-dark);
+        font-size: 12pt;
+        font-weight: 700;
+      }
+
+      .detail-card {
+        margin-top: 5mm;
+        border: 1px solid var(--line);
+        break-inside: avoid;
+      }
+
+      .detail-card h2 {
+        margin: 0;
+        padding: 2.5mm 3mm;
+        color: #fff;
+        background: var(--teal-dark);
+        font-size: 8.5pt;
+      }
+
+      .detail-card p {
+        margin: 0;
+        padding: 3mm;
+        font-size: 8.5pt;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+      }
+
+      .document-footer {
+        margin-top: 8mm;
+        padding-top: 3mm;
+        border-top: 1px solid var(--line);
         color: var(--muted);
-        font-size: 7.4px;
-        line-height: 1.35;
+        font-size: 7.5pt;
+        line-height: 1.4;
       }
-
-      .summary-note {
-        margin-top: 4mm;
-        font-size: 9px;
-        color: var(--muted);
-        font-style: italic;
-      }
-
-      .footer-note {
-        margin-top: 10mm;
-        font-size: 7.5px;
-        color: #4b5563;
-      }
-
     </style>
   </head>
   <body>
-    <div class="a4-page">
-      <div class="content">
-        <header class="header">
-          <div class="company-block">
-            <div class="company-brand">
-              {% if company_logo_url %}
-                <img class="company-logo" alt="{{ company_name }} logo" src="{{ company_logo_url }}" />
-              {% endif %}
+    <article class="a4-page">
+      <header class="header">
+        <section class="company-block" aria-label="Entreprise émettrice">
+          <div class="company-brand">
+            {% if company_logo_url %}
+              <img class="company-logo" alt="Logo {{ company_name }}" src="{{ company_logo_url }}" />
+            {% endif %}
+            {% if company_name %}
               <div class="brand-name">{{ company_name | upper }}</div>
-            </div>
-
-            <div class="company-details">
-              {% if company_address %}
-                {{ company_address | replace('\n', '<br/>') | safe }}
-              {% endif %}
-              <br /><br />
-              {% if company_contacts %}
-                {{ company_contacts | replace('\n', '<br/>') | safe }}
-              {% endif %}
-            </div>
+            {% endif %}
           </div>
-
-          <div class="right-block">
-            <h1 class="title">DEVIS</h1>
-
-            <div class="quote-meta">
-              <p><strong>N° :</strong> {{ quotation.reference }}</p>
-              <p><strong>Date d'émission :</strong> {{ format_date(quotation.creation_date) }}</p>
-              <p><strong>Devis valable jusqu'au :</strong><br />{{ format_date(quotation.validity_date) }}</p>
-              <p><strong>Délai de livraison :</strong> {{ quotation.delivery_duration or 'Non précisé' }}</p>
-            </div>
-
-            <div class="client-block">
-              <p class="client-name">{{ quotation.client_name }}</p>
-            </div>
+          <div class="company-details">
+            {% if company_address %}
+              <p>{{ company_address | replace('\n', '<br/>') | safe }}</p>
+            {% endif %}
+            {% if company_contacts %}
+              <p>{{ company_contacts | replace('\n', '<br/>') | safe }}</p>
+            {% endif %}
           </div>
-        </header>
+        </section>
 
-        <main>
-          <table>
-            <thead>
+        <section class="right-block" aria-label="Informations du devis">
+          <h1 class="title">DEVIS</h1>
+          <div class="quote-meta">
+            {% if quotation.reference %}
+              <p><strong>N° du devis :</strong> {{ quotation.reference }}</p>
+            {% endif %}
+            {% if quotation.creation_date %}
+              <p><strong>Date d’émission :</strong> {{ format_date(quotation.creation_date) }}</p>
+            {% endif %}
+            {% if quotation.validity_date %}
+              <p><strong>Valable jusqu’au :</strong> {{ format_date(quotation.validity_date) }}</p>
+            {% endif %}
+            {% if quotation.delivery_duration %}
+              <p><strong>Délai de livraison :</strong> {{ quotation.delivery_duration }}</p>
+            {% endif %}
+          </div>
+          <div class="client-block">
+            <p class="client-label">Client</p>
+            <p class="client-name">{{ quotation.client_name }}</p>
+            {% if quotation.client_email %}
+              <p class="client-detail">{{ quotation.client_email }}</p>
+            {% endif %}
+            {% if quotation.client_address %}
+              <p class="client-detail">{{ quotation.client_address }}</p>
+            {% endif %}
+            {% if quotation.client_reference %}
+              <p class="client-detail">Référence client : {{ quotation.client_reference }}</p>
+            {% endif %}
+          </div>
+        </section>
+      </header>
+
+      <main>
+        <table>
+          <colgroup>
+            <col class="column-number" />
+            <col class="column-description" />
+            <col class="column-quantity" />
+            <col class="column-unit" />
+            <col class="column-unit-price" />
+            <col class="column-line-total" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="cell-number">N°</th>
+              <th>Désignation</th>
+              <th class="cell-quantity">Qté</th>
+              <th class="cell-unit">Unité</th>
+              <th class="cell-money">Prix unitaire HT</th>
+              <th class="cell-money">Montant HT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for article in quotation.articles %}
               <tr>
-                <th>N°</th>
-                <th>Libellé</th>
-                <th>Qté</th>
-                <th>Unité</th>
-                <th>Prix unitaire</th>
-                <th>Montant</th>
+                <td class="cell-number">{{ loop.index }}</td>
+                <td class="article-name">{{ article.designation }}</td>
+                <td class="cell-quantity">{{ format_quantity(article.quantity) }}</td>
+                <td class="cell-unit">{{ article.unit or "—" }}</td>
+                <td class="cell-money">{{ format_currency(article.unit_price) }}</td>
+                <td class="cell-money">{{ format_currency(article_line_total(article)) }}</td>
               </tr>
-            </thead>
-            <tbody>
-              {% for article in quotation.articles %}
-                <tr>
-                  <td>{{ loop.index }}</td>
-                  <td>
-                    <span class="article-name">{{ article.designation }}</span>
-                  </td>
-                  <td>{{ article.quantity }}</td>
-                  <td>{{ article.unit or '—' }}</td>
-                  <td>{{ format_currency(article.unit_price) }}</td>
-                  <td>{{ format_currency(article.line_total) }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+            {% endfor %}
+          </tbody>
+        </table>
 
-          <div class="summary-note">Environ {{ quotation.articles | length }} article(s)</div>
-        </main>
-
-        <div class="lower-grid" style="margin-top: 12mm; display: flex; justify-content: space-between; align-items: flex-start; gap: 16mm;">
-          <div style="width: 58%;">
-            <div style="margin-top: 8mm; font-size: 9px; font-style: italic; color: var(--muted); text-align: left;">
+        <section class="document-summary" aria-label="Récapitulatif du devis">
+          <div class="summary-left">
+            <p class="amount-in-words">
+              <strong>Montant total HT en lettres</strong>
               {{ amount_in_words }}
-            </div>
-
-            <div style="margin-top: 10mm; border: 1px solid var(--teal); width: 100%;">
-              <div style="background: var(--teal); color: #fff; font-weight: 700; font-size: 10px; padding: 4px 8px;">Incoterm</div>
-              <div style="padding: 8px 8px 10px 8px; font-size: 10px; color: #1b1f23; font-weight: 700; text-align: center;">{{ incoterm_label or 'À définir' }}</div>
+            </p>
+            {% if incoterm_label %}
+              <section class="detail-card">
+                <h2>Incoterm</h2>
+                <p>{{ incoterm_label }}</p>
+              </section>
+            {% endif %}
+            {% if company_bank_details %}
+              <section class="detail-card">
+                <h2>Coordonnées bancaires</h2>
+                <p>{{ company_bank_details | replace('\n', '<br/>') | safe }}</p>
+              </section>
+            {% endif %}
+          </div>
+          <div class="summary-right">
+            <div class="total-row total-row--grand">
+              <span>Total HT</span>
+              <strong>{{ format_currency(quotation_total) }}</strong>
             </div>
           </div>
+        </section>
+      </main>
 
-          <div style="width: 38%;">
-            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 0;">
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 700; color: #1b1f23;">
-                <span>Montant</span>
-                <span>{{ format_currency(quotation_total) }}</span>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; color: var(--teal); padding-top: 4px; border-top: 1px solid var(--line);">
-                <span>Total du devis</span>
-                <span>{{ format_currency(quotation_total) }}</span>
-              </div>
-            </div>
-
-            <div style="margin-top: 12mm; border: 1px solid var(--teal); width: 100%;">
-              <div style="background: var(--teal); color: #fff; font-weight: 700; font-size: 10px; padding: 4px 8px;">Coordonnées bancaires</div>
-              <div style="padding: 8px 8px 10px 8px; font-size: 9px; line-height: 1.5; color: #1b1f23;">
-                {% if company_bank_details %}
-                  {{ company_bank_details | replace('\n', '<br/>') | safe }}
-                {% endif %}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    {% if company_logo_url %}
-      <img class="watermark" alt="{{ company_name }} watermark" src="{{ company_logo_url }}" />
-    {% endif %}
+      <footer class="document-footer">
+        Document généré par ProQuote ERP.
+      </footer>
+    </article>
   </body>
 </html>
