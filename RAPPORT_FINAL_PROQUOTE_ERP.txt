@@ -1067,10 +1067,14 @@ Les éléments techniques examinés font ressortir les contraintes suivantes :
   SQLite localement et PostgreSQL sur Render ;
 - les données de la base locale `test.db` ne sont pas transférées par les migrations
   de schéma ;
-- l’exécution réelle des tâches planifiées et des sauvegardes reste à établir en
-  production ;
-- la configuration du frontend conserve `VITE_RENDER_DEPLOYED` à `false`, ce qui
-  empêche de considérer l’instance comme activée uniquement sur la base du blueprint.
+- le fonctionnement des tâches planifiées, l’envoi SMTP et les sauvegardes reste à
+  établir en production ;
+- les endpoints publics de l’API et du frontend ont répondu HTTP 200 lors d’un
+  contrôle GET en lecture seule le 25 octobre 2026 ; ce contrôle ne prouve pas que le
+  commit courant est déployé ni que les tâches planifiées sont opérationnelles ;
+- l’ancienne variable `VITE_RENDER_DEPLOYED` n’était pas consommée par le code du
+  frontend ; elle a été retirée du blueprint et ne permettait pas de vérifier l’état
+  réel du déploiement.
 
 Les mesures correctives consignées comprennent la suppression de valeurs par défaut
 sensibles, l’externalisation des paramètres entreprise, l’alignement du README sur le
@@ -1081,8 +1085,8 @@ recette de l’entreprise et l’exploitation en production restent distinctes.
 9.3. Risques et suivi
 
 Les principaux risques liés au projet sont la disponibilité des dépendances PDF, la
-configuration de messagerie, l’absence de preuve de déploiement, la sauvegarde des
-données, la reprise éventuelle des données locales et la cohérence de la documentation
+configuration de messagerie, la vérification du commit déployé et des Cron, la sauvegarde
+des données, la reprise éventuelle des données locales et la cohérence de la documentation
 d’exploitation. Ils sont recensés ici à partir des écarts observés, sans prétendre
 qu’un registre de risques formel a été tenu pendant le stage.
 
@@ -1108,12 +1112,14 @@ PostgreSQL                       Base de production reliée à DATABASE_URL
 Disque persistant                Stockage des PDF sous /var/data/pdfs
 Frontend statique                Build npm ci puis npm run build, publication de dist
 Cron horaire                     Commande d’expiration, planifiée au début de chaque heure
+Cron quotidien                   Relances par e-mail, planifiées à 08:00 UTC
 
 La configuration prévoit une migration Alembic avant le démarrage de l’API, une
 vérification de santé sur `/health`, une clé `SECRET_KEY` générée par Render et des
 variables de configuration d’entreprise et de messagerie à fournir séparément. Le
-front-end reçoit l’URL publique de l’API par configuration. L’activation
-`VITE_RENDER_DEPLOYED` est explicitement à `false` dans le blueprint fourni.
+front-end reçoit l’URL publique de l’API par configuration. L’ancienne variable
+`VITE_RENDER_DEPLOYED`, non consommée par le code du frontend, a été retirée ; elle
+n’atteste pas de l’état réel de l’instance.
 
 Le guide précise que le Cron vérifie que la base est au niveau attendu avant le
 traitement, et qu’il ne doit pas être confondu avec un worker Celery permanent. Il
@@ -1125,31 +1131,34 @@ La figure 6 représente uniquement les composants déclarés dans le blueprint. 
 liaisons en pointillés distinguent les services dont la configuration ou l’état en
 ligne n’a pas été vérifié.
 
-Figure 6. Déploiement Render déclaré, état opérationnel non confirmé
+Figure 6. Déploiement Render déclaré ; seuls les endpoints publics API et frontend ont
+été vérifiés par requête GET, pas le commit, les tâches ni l’e-mail
 [[IMAGE:06_deploiement_prevu.png]]
 
 10.2. Écart documentaire sur Celery et Redis
 
 Une version antérieure du README backend indiquait qu’un worker Celery et Render Key
-Value prenaient en charge les rappels et l’expiration. Le `render.yaml` et le guide de
-déploiement décrivent plutôt un Cron horaire pour l’expiration, sans worker permanent
-ni Redis/Key Value. La contradiction documentaire a été corrigée dans le README :
-celui-ci distingue désormais les tâches Celery présentes dans le code du Cron déclaré
-et précise que les rappels de paiement ne sont pas planifiés par le blueprint.
-L’exécution réelle du Cron ou des rappels sur Render n’est pas démontrée.
+Value prenaient en charge les rappels et l’expiration. Le `render.yaml` actuel déclare
+deux Cron — un horaire pour l’expiration et un quotidien pour les relances — sans worker
+permanent ni Redis/Key Value. La contradiction documentaire a été corrigée dans le
+README : celui-ci distingue les tâches Celery présentes dans le code des commandes
+Cron réellement déclarées. L’exécution réelle des Cron ou des rappels sur Render n’est
+pas démontrée.
 
 10.3. État opérationnel vérifiable
 
-Les pièces établissent que le dépôt contient une configuration de déploiement
-préparée. Elles ne fournissent pas une URL de service confirmée, un résultat de contrôle
-`/health` sur l’instance publique, des journaux de déploiement Render, la réussite d’une
-migration en production, la vérification du Cron, une capture du frontend en ligne ou
-un essai réel de génération PDF et d’envoi SMTP en production.
+Le 25 octobre 2026, les contrôles publics en lecture seule suivants ont réussi :
+`GET https://proquote-erp-api.onrender.com/health` a répondu HTTP 200 avec la base
+signalée `ok` ; `GET https://proquote-erp-frontend.onrender.com` et le bundle JavaScript
+référencé ont répondu HTTP 200. Le bundle examiné ne contenait pas d’URL locale
+`localhost:8000`.
 
-La conclusion factuelle est donc : « déploiement décrit et préparé dans le dépôt ;
-exploitation opérationnelle non prouvée par les éléments examinés ». Le statut
-`success` d’un éventuel workflow GitHub sans hook Render configuré ne suffirait pas,
-selon le guide, à prouver qu’un déploiement a eu lieu.
+Ces contrôles prouvent que les endpoints publics répondaient à cette date, mais pas que
+le commit de cette correction est déployé. Aucun journal Render n’a été consulté et
+aucun Cron, envoi SMTP, génération PDF ou opération d’écriture en production n’a été
+exécuté. La migration de production n’a pas été vérifiée. Le YAML a été parsé localement
+et les références de services contrôlées, mais Render CLI et un validateur Blueprint
+spécifique n’étaient pas disponibles.
 
 10.4. Exploitation, sauvegarde et reprise
 
@@ -1162,6 +1171,39 @@ et non comme opérations déjà effectuées.
 Une migration de schéma Alembic ne réalise pas une migration des données métier depuis
 la base SQLite locale. La reprise de données, si elle est nécessaire, constitue une
 opération distincte dont le périmètre et le résultat ne sont pas documentés.
+
+10.5. Scénarios de coût Render
+
+Les prix affichés dans la page officielle Render consultée le 25 octobre 2026 sont en
+USD et hors taxes. Pour le blueprint actuel, l’API `0.5c-512mb` est affichée à
+7 USD/mois ; le disque PDF de 1 GB coûte 0,25 USD/mois ; chaque Cron a un minimum de
+facturation de 1 USD/mois (le tarif affiché pour `0.5c-512mb` est de 0,00016 USD/minute).
+Le site statique est gratuit.
+
+Scénario minimal à 0 USD/mois : API et PostgreSQL gratuits, frontend statique gratuit,
+mais sans disque persistant et sans Cron. Ce scénario n’est pas adapté à la production :
+le service web gratuit s’endort après 15 minutes sans trafic, le système de fichiers est
+éphémère, la base PostgreSQL gratuite expire 30 jours après sa création et est supprimée
+après une période de grâce de 14 jours si elle n’est pas mise à niveau. Les deux Cron
+déclarés coûteraient au minimum 2 USD/mois ; les désactiver supprime l’expiration
+automatique des devis et les relances programmées. Render inclut 750 heures gratuites de
+service par espace et par mois ; un dépassement suspend les services gratuits jusqu’au
+mois suivant. Le web gratuit ne peut pas envoyer de SMTP sur le port 587.
+
+Scénario recommandé : API 7 USD/mois, PostgreSQL 1 GB estimé à 19 USD/mois d’après le
+plan courant `0.5c-1g`, disque 1 GB à 0,25 USD/mois, deux Cron au minimum 2 USD/mois et
+frontend à 0 USD, soit environ 28,25 USD/mois avant taxes, dépassements de bande passante
+ou stockage PostgreSQL additionnel. Le blueprint utilise le nom de plan `basic-1gb` ;
+Render documente la continuité des noms de plans historiques ; l’estimation suppose
+qu’il correspond au plan PostgreSQL 1 GB affiché. Confirmer le plan réellement actif et
+son tarif dans le Dashboard Render avant tout engagement. Le PostgreSQL 1 GB inclut
+1 GB SSD ; le stockage additionnel est affiché à 0,30 USD/GB. Les Cron sont facturés à
+la minute d’exécution, avec un minimum mensuel par service.
+
+Sources officielles consultées : https://render.com/pricing ;
+https://render.com/docs/free ; https://render.com/docs/cronjobs ;
+https://render.com/docs/disks ; https://render.com/docs/compute-plans. Aucun plan ni
+service n’a été modifié ou créé dans Render.
 
 
 11. LIMITES ET PERSPECTIVES
@@ -1176,7 +1218,8 @@ Les limites principales sont les suivantes :
 - envoi SMTP réel non validé dans les traces disponibles ;
 - WeasyPrint validé localement, mais pas dans l’image Linux de production ;
 - écart de fidélité du PDF reconnu par la présentation et la note ;
-- fonctionnement public du blueprint Render non démontré ;
+- endpoints publics API/frontend joignables, mais exécution des Cron et déploiement du
+  commit courant non vérifiés ;
 - sauvegarde et restauration non prouvées ;
 - reprise des données de test.db non prise en charge par les migrations ;
 - absence de preuve formelle de validation des fonctionnalités par l’entreprise ;

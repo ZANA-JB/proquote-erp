@@ -101,8 +101,6 @@ services:
           type: web
           name: proquote-erp-api
           envVarKey: RENDER_EXTERNAL_URL
-      - key: VITE_RENDER_DEPLOYED
-        value: "false"
     routes:
       - type: rewrite
         source: /*

@@ -64,6 +64,29 @@ def test_quotation_email_without_sender_is_not_sent(monkeypatch):
     ) is False
 
 
+def test_payment_reminder_uses_configured_currency_and_quote_validity_date(monkeypatch):
+    captured: list[EmailMessage] = []
+    monkeypatch.setattr(email_service.settings, "MAIL_FROM", "test@example.com")
+    monkeypatch.setattr(email_service.settings, "COMPANY_NAME", "ProQuote Test")
+    monkeypatch.setattr(email_service, "_send_email", lambda message: captured.append(message) or True)
+    quotation = SimpleNamespace(
+        reference="Q-REMINDER-001",
+        client_name="Client Test",
+        client_email="client@example.com",
+        total_amount=Decimal("1250.00"),
+        validity_date=date(2026, 10, 1),
+    )
+    reminder = SimpleNamespace(due_date=date(2026, 10, 8))
+
+    assert email_service.send_payment_reminder_email(quotation, reminder) is True
+
+    body = captured[0].get_content()
+    assert "1250.00 FCFA" in body
+    assert "€" not in body
+    assert "Date de validité du devis : 2026-10-01" in body
+    assert "Date d'échéance du devis" not in body
+
+
 def test_due_quotations_are_accepted_unpaid_and_past_threshold():
     test_engine = create_engine(
         "sqlite://",
@@ -150,9 +173,52 @@ def test_failed_payment_reminder_is_recorded_as_failure(monkeypatch):
         reminder = payment_reminder_service.send_reminder_for_quotation(db, quotation, today)
         assert reminder is not None
         assert reminder.reminder_status == ReminderStatus.ECHEC
+        assert reminder.sent_date is None
         audit = db.query(AuditLog).filter(AuditLog.entity_id == reminder.id).one()
         assert audit.action == "payment_reminder.failed"
         assert audit.details["status"] == ReminderStatus.ECHEC.value
     finally:
         db.close()
+        test_engine.dispose()
+
+
+def test_payment_reminder_task_reports_sends_and_failures_without_success_fallback(monkeypatch):
+    from app.tasks import payment_reminders
+
+    test_engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(bind=test_engine)
+    test_session = sessionmaker(bind=test_engine)
+    monkeypatch.setattr(payment_reminders, "SessionLocal", test_session)
+    quotations = [
+        SimpleNamespace(id="sent-quotation"),
+        SimpleNamespace(id="failed-quotation"),
+        SimpleNamespace(id="exception-quotation"),
+    ]
+    monkeypatch.setattr(
+        payment_reminders,
+        "get_due_quotations",
+        lambda _db, _today: quotations,
+    )
+
+    def send_reminder(_db, quotation, _today):
+        if quotation.id == "exception-quotation":
+            raise RuntimeError("test failure")
+        status = ReminderStatus.ENVOYE if quotation.id == "sent-quotation" else ReminderStatus.ECHEC
+        return SimpleNamespace(reminder_status=status)
+
+    monkeypatch.setattr(payment_reminders, "send_reminder_for_quotation", send_reminder)
+
+    try:
+        result = payment_reminders.send_payment_reminders.run()
+        with test_session() as db:
+            task_log = db.query(AuditLog).filter(AuditLog.entity_type == "system_task").one()
+            assert result == {"sent": 1, "failed": 2}
+            assert task_log.details["processed"] == 1
+            assert task_log.details["status"] == "partial_failure"
+            assert task_log.details["failed"] == 2
+    finally:
         test_engine.dispose()

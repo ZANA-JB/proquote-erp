@@ -50,7 +50,7 @@ def send_reminder_for_quotation(db: Session, quotation: Quotation, today: date) 
     db.flush()
 
     email_ok = send_payment_reminder_email(quotation, reminder)
-    reminder.sent_date = datetime.utcnow()
+    reminder.sent_date = datetime.utcnow() if email_ok else None
     reminder.reminder_status = ReminderStatus.ENVOYE if email_ok else ReminderStatus.ECHEC
     db.add(reminder)
 

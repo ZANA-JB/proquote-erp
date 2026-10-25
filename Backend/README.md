@@ -43,8 +43,10 @@ La documentation Swagger est disponible sur `/docs`.
 
 Le fichier `render.yaml` à la racine déclare un frontend statique, une API Docker,
 PostgreSQL, un disque persistant pour les PDF et deux Cron périodiques. Il ne
-déclare ni Redis/Key Value ni worker Celery. Le déploiement Render n'a pas été
-réalisé ou confirmé.
+déclare ni Redis/Key Value ni worker Celery. Le 25 octobre 2026, un contrôle GET
+public a reçu HTTP 200 sur `/health` (base de données signalée opérationnelle) et sur
+le frontend. Cela ne confirme pas que le commit courant est déployé ni que les Cron,
+SMTP ou la génération PDF en production fonctionnent.
 
 - Render exécute `alembic upgrade head` comme commande de pré-déploiement de l'API,
   puis l'image démarre Uvicorn sur `0.0.0.0:$PORT`.
@@ -53,5 +55,4 @@ réalisé ou confirmé.
   appelle `python -m app.tasks.run_payment_reminders_job`.
 - Dans le Shell du service API Render (conteneur Linux, pas PowerShell Windows), lancer `python -m app.bootstrap_admin`. Le script crée le premier administrateur si aucun n'existe. S'il existe déjà un compte administrateur à l'adresse saisie, il réinitialise uniquement son mot de passe, conserve son identifiant et ses données liées, puis invalide ses sessions actives. Confirmer l'adresse exacte à l'invite ; le mot de passe est saisi sans affichage. Si un administrateur existe sous une autre adresse, utiliser cette adresse exacte. Le script ne supprime aucun compte ni aucune donnée métier.
 - Renseigner SMTP et `COMPANY_BANK_DETAILS` dans les variables privées du Dashboard Render, jamais dans le dépôt.
-- `VITE_RENDER_DEPLOYED` reste à `false` dans le blueprint. Le passer à `true` et redéployer le frontend uniquement après vérification que l'API, PostgreSQL et le frontend sont réellement opérationnels sur Render.
 - Les migrations créent le schéma PostgreSQL mais ne transfèrent pas les lignes de `test.db`. Toute reprise de données existantes doit être planifiée et vérifiée séparément avant la bascule.

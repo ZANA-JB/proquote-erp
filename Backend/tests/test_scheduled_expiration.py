@@ -124,8 +124,12 @@ def test_payment_reminder_job_runs_when_mail_settings_are_configured(monkeypatch
     monkeypatch.setattr(run_payment_reminders_job, "ensure_database_migrations_are_current", lambda: None)
     monkeypatch.setattr(run_payment_reminders_job.settings, "SMTP_HOST", "smtp.example.test")
     monkeypatch.setattr(run_payment_reminders_job.settings, "MAIL_FROM", "test@example.test")
-    monkeypatch.setattr(run_payment_reminders_job.send_payment_reminders, "run", lambda: 3)
+    monkeypatch.setattr(
+        run_payment_reminders_job.send_payment_reminders,
+        "run",
+        lambda: {"sent": 3, "failed": 1},
+    )
 
     run_payment_reminders_job.main()
 
-    assert "reminders sent: 3" in capsys.readouterr().out
+    assert "sent: 3, failed: 1" in capsys.readouterr().out

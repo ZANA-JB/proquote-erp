@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -87,6 +89,7 @@ def test_create_quotation_persists_incoterm_value():
                 "quantity": 2,
                 "unit": "u",
                 "unit_price": 100,
+                "line_total": 0.01,
             }
         ],
     }
@@ -99,6 +102,16 @@ def test_create_quotation_persists_incoterm_value():
 
     assert response.status_code == 200
     assert response.json()["incoterm"] == "DDP"
+    assert response.json()["total_amount"] == 200
+    assert Decimal(response.json()["articles"][0]["line_total"]) == Decimal("200.00")
+
+    quotation_id = response.json()["id"]
+    retrieved = client.get(
+        f"/api/v1/quotations/{quotation_id}",
+        headers=response.request.headers,
+    )
+    assert retrieved.status_code == 200, retrieved.text
+    assert retrieved.json()["total_amount"] == 200
 
 
 def test_pdf_renders_incoterm_value_instead_of_approval_block():
@@ -132,6 +145,11 @@ def test_pdf_renders_incoterm_value_instead_of_approval_block():
     assert "Incoterm" in html
     assert "EXW" in html
     assert "Bon pour accord" not in html
+    assert "TVA" not in html
+    assert "Total TTC" not in html
+    assert "Virement bancaire" not in html
+    assert "À la commande" not in html
+    assert "Montant</span>" in html
 
 
 def test_auth_me_returns_current_user_profile_for_each_role():

@@ -22,8 +22,11 @@ def main() -> None:
             + "."
         )
 
-    processed = send_payment_reminders.run()
-    print(f"Payment reminders completed; reminders sent: {processed}")
+    result = send_payment_reminders.run()
+    print(
+        "Payment reminders completed; "
+        f"sent: {result['sent']}, failed: {result['failed']}"
+    )
 
 
 if __name__ == "__main__":

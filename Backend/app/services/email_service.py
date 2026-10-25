@@ -76,8 +76,8 @@ def send_payment_reminder_email(quotation: Quotation, reminder: PaymentReminder)
     body = (
         f"Bonjour {quotation.client_name},\n\n"
         f"Ceci est un rappel de paiement pour le devis {quotation.reference}.\n"
-        f"Montant dû : {quotation.total_amount} €.\n"
-        f"Date d'échéance du devis : {quotation.validity_date or 'N/A'}.\n\n"
+        f"Montant dû : {quotation.total_amount} FCFA.\n"
+        f"Date de validité du devis : {quotation.validity_date or 'N/A'}.\n\n"
         f"Merci de procéder au règlement dès que possible.\n\n"
         f"Cordialement,\n{settings.COMPANY_NAME}"
     )

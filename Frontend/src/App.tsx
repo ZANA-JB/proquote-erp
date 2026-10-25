@@ -340,34 +340,22 @@ function LegalNoticesPage() {
 
       <div className="legal-page-content">
         <div className="legal-page-heading">
-          <p>TRIDENT OIL SERVICES</p>
+          <p>PROQUOTE ERP</p>
           <h1>Mentions légales</h1>
-          <span>Informations légales relatives à ProQuote ERP et à son éditeur.</span>
+          <span>Les informations juridiques de l’éditeur doivent être confirmées avant publication.</span>
         </div>
 
         <section className="legal-section">
           <div className="legal-section-heading">
             <span className="material-symbols-outlined" aria-hidden="true">domain</span>
-            <h2>Éditeur de l’application</h2>
+            <h2>Éditeur</h2>
           </div>
-          <dl className="legal-details">
-            <div className="legal-detail legal-detail-wide"><dt>Raison sociale</dt><dd>TRIDENT OIL SERVICES</dd></div>
-            <div className="legal-detail"><dt>Forme juridique</dt><dd>SARL</dd></div>
-            <div className="legal-detail"><dt>Capital social</dt><dd>5 000 000 FCFA</dd></div>
-            <div className="legal-detail legal-detail-wide"><dt>Adresse officielle</dt><dd>Abidjan Cocody Abatta Extension Nord derriere la Station Ola Energy</dd></div>
-            <div className="legal-detail"><dt>Téléphone standard</dt><dd>0749014966</dd></div>
-            <div className="legal-detail"><dt>Adresse électronique</dt><dd>tridendoilservices@gmail.com</dd></div>
-            <div className="legal-detail legal-detail-wide"><dt>Registre du Commerce et du Crédit Mobilier (RCCM)</dt><dd>N°CI163 01202 000000358040 21 GTBank</dd></div>
-            <div className="legal-detail legal-detail-wide"><dt>Compte Contribuable (CC)</dt><dd>2403807 J - TEE</dd></div>
-          </dl>
-        </section>
-
-        <section className="legal-section">
-          <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">assignment_ind</span>
-            <h2>Responsable de la publication</h2>
-          </div>
-          <p>Direction Générale / Direction des Systèmes d’Information - Trident Oil Services</p>
+          <p>
+            L’identité juridique de l’éditeur, sa raison sociale, sa forme juridique, son adresse,
+            ses coordonnées, ses numéros d’immatriculation et le responsable de publication ne
+            sont pas confirmés par les sources techniques auditées. Ces informations doivent être
+            fournies et validées par l’organisation éditrice.
+          </p>
         </section>
 
         <section className="legal-section">
@@ -375,39 +363,17 @@ function LegalNoticesPage() {
             <span className="material-symbols-outlined" aria-hidden="true">dns</span>
             <h2>Hébergement</h2>
           </div>
-          {import.meta.env.VITE_RENDER_DEPLOYED === 'true' ? (
-            <dl className="legal-details">
-              <div className="legal-detail"><dt>Hébergeur</dt><dd>Render Services, Inc.</dd></div>
-              <div className="legal-detail"><dt>Adresse</dt><dd>525 Brannan Street, Ste 300,<br />San Francisco, CA 94107,<br />États-Unis.</dd></div>
-            </dl>
-          ) : (
-            <p>L’hébergement sera précisé lors de la mise en production.</p>
-          )}
+          <p>
+            Le Blueprint <code>render.yaml</code> déclare des services sur Render. L’entité
+            contractante de l’hébergeur, son adresse juridique, la région d’hébergement effectivement
+            utilisée et les conditions applicables doivent être vérifiées dans le compte Render.
+          </p>
         </section>
 
-        <section className="legal-section">
-          <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">hub</span>
-            <h2>ProQuote ERP</h2>
-          </div>
-          <p>ProQuote ERP est une application interne destinée à la gestion des devis commerciaux de Trident Oil Services. Son accès est réservé aux utilisateurs autorisés par l’entreprise.</p>
-        </section>
-
-        <section className="legal-section">
-          <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">copyright</span>
-            <h2>Propriété intellectuelle</h2>
-          </div>
-          <p>L’application ProQuote ERP, son interface, sa structure et ses contenus sont destinés à un usage interne. Ils ne doivent pas être reproduits ou utilisés sans l’autorisation de Trident Oil Services.</p>
-        </section>
-
-        <section className="legal-section">
-          <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">security</span>
-            <h2>Données personnelles</h2>
-          </div>
-          <p>Les données traitées dans ProQuote ERP sont utilisées dans le cadre de la gestion interne des utilisateurs, des clients et des devis. Pour plus d’informations, consulter la page <a href="/confidentialite">Confidentialité</a>.</p>
-        </section>
+        <p className="privacy-note">
+          La page <a href="/confidentialite">Confidentialité</a> décrit les éléments techniques
+          constatés dans le code ; elle ne remplace pas la validation juridique de l’éditeur.
+        </p>
       </div>
     </main>
   )
@@ -431,16 +397,19 @@ function PrivacyPage() {
         <div className="legal-page-heading">
           <p>PROTECTION DES DONNÉES</p>
           <h1>Confidentialité</h1>
-          <span>Informations relatives à l’utilisation et à la protection des données dans ProQuote ERP.</span>
+          <span>Résumé technique à valider par l’organisation responsable du traitement.</span>
         </div>
 
         <section className="legal-section privacy-intro-section">
           <div className="legal-section-heading">
             <span className="material-symbols-outlined" aria-hidden="true">shield</span>
-            <h2>ProQuote ERP</h2>
+            <h2>Portée</h2>
           </div>
-          <p>ProQuote ERP est une application interne destinée à la gestion des utilisateurs, des clients et des cotations/devis de Trident Oil Services. Son accès est réservé aux utilisateurs autorisés par l’entreprise.</p>
-          <p className="privacy-note">Le client final ne dispose pas d’un compte ni d’un accès direct identifié dans le système.</p>
+          <p>
+            Cette page résume les catégories de données et mécanismes visibles dans le dépôt.
+            Elle ne détermine ni le responsable légal du traitement, ni sa base juridique, ni les
+            obligations applicables. Ces éléments doivent être validés par l’organisation.
+          </p>
         </section>
 
         <section className="legal-section">
@@ -450,36 +419,29 @@ function PrivacyPage() {
           </div>
           <div className="privacy-grid">
             <div className="privacy-block">
-              <h3>Données des utilisateurs</h3>
+              <h3>Comptes et demandes d’accès</h3>
               <ul className="privacy-list">
-                <li>Nom complet</li>
-                <li>Adresse e-mail</li>
-                <li>Rôle et statut du compte</li>
-                <li>Avatar, lorsqu’il est utilisé</li>
-                <li>Informations nécessaires à la gestion du compte</li>
+                <li>Nom, adresse e-mail, rôle et état du compte</li>
+                <li>Hash du mot de passe (le mot de passe en clair n’est pas stocké dans le modèle utilisateur)</li>
+                <li>Avatar lorsqu’il est renseigné</li>
+                <li>Pour une demande d’accès : nom, e-mail, profil souhaité, état, date et hash du mot de passe demandé</li>
               </ul>
             </div>
             <div className="privacy-block">
-              <h3>Données des clients</h3>
+              <h3>Clients et devis</h3>
               <ul className="privacy-list">
-                <li>Nom du client</li>
-                <li>Adresse e-mail</li>
-                <li>Adresse</li>
-                <li>Référence client</li>
+                <li>Nom, e-mail, adresse et référence du client enregistrés dans le devis</li>
+                <li>Référence et dates du devis, statut et montant</li>
+                <li>Désignation des articles, quantités, unités, prix et conditions commerciales</li>
+                <li>État payé/non payé et données de relance lorsque ces fonctionnalités sont utilisées</li>
               </ul>
             </div>
             <div className="privacy-block privacy-block-wide">
-              <h3>Données des cotations et devis</h3>
-              <ul className="privacy-list privacy-list-columns">
-                <li>Référence et dates</li>
-                <li>Client</li>
-                <li>Articles, quantités et unités</li>
-                <li>Prix et montants</li>
-                <li>Statut</li>
-                <li>Délai de livraison</li>
-                <li>Incoterm</li>
-                <li>Conditions particulières</li>
-                <li>Informations de paiement lorsqu’elles sont présentes</li>
+              <h3>Journaux et fichiers</h3>
+              <ul className="privacy-list">
+                <li>Journaux applicatifs d’actions : utilisateur, action, type et identifiant d’entité, date et détails associés</li>
+                <li>Relances : devis concerné, date de référence calculée depuis sa validité, date d’envoi et état d’envoi</li>
+                <li>PDF enregistrés sous le chemin configuré ; les avatars sont conservés comme valeur dans le compte utilisateur</li>
               </ul>
             </div>
           </div>
@@ -488,17 +450,15 @@ function PrivacyPage() {
         <section className="legal-section">
           <div className="legal-section-heading">
             <span className="material-symbols-outlined" aria-hidden="true">task_alt</span>
-            <h2>Utilisation des données</h2>
+            <h2>Traitements visibles dans le code</h2>
           </div>
           <ul className="privacy-list privacy-list-columns">
-            <li>Gestion des comptes utilisateurs</li>
-            <li>Gestion des accès</li>
-            <li>Création et gestion des cotations/devis</li>
-            <li>Suivi des statuts</li>
-            <li>Génération des PDF</li>
-            <li>Envoi des devis par e-mail</li>
-            <li>Suivi des paiements et relances lorsqu’ils sont utilisés</li>
-            <li>Fonctionnement des tableaux de bord et de l’historique</li>
+            <li>Authentification, gestion des rôles et demandes d’accès</li>
+            <li>Création, consultation, modification et suppression de devis selon les permissions</li>
+            <li>Calcul des montants, génération et téléchargement de PDF</li>
+            <li>Envoi de devis et relances par e-mail via SMTP lorsque configuré</li>
+            <li>Suivi de statut et données de paiement (état payé/non payé)</li>
+            <li>Tableaux de bord, graphiques et historique d’actions</li>
           </ul>
         </section>
 
@@ -508,11 +468,11 @@ function PrivacyPage() {
             <h2>Accès aux données</h2>
           </div>
           <div className="privacy-role-list">
-            <p><strong>Administrateurs</strong> : disposent des droits d’administration prévus par le système.</p>
-            <p><strong>Managers/Responsables</strong> : disposent des droits métier prévus par le système.</p>
-            <p><strong>Collaborateurs</strong> : accèdent aux données qui leur sont autorisées, notamment à leurs propres cotations selon les règles du système.</p>
+            <p><strong>Administrateurs</strong> : routes d’administration des comptes et demandes d’accès.</p>
+            <p><strong>Responsables</strong> : permissions métier et transitions de statut prévues par l’API.</p>
+            <p><strong>Collaborateurs</strong> : les routes de devis filtrent leur accès à leurs propres devis.</p>
           </div>
-          <p className="privacy-note">Les contrôles d’accès sont appliqués côté serveur afin de limiter l’accès aux données selon les droits de l’utilisateur.</p>
+          <p className="privacy-note">Ces rôles et contrôles sont définis dans les routes et dépendances de l’API.</p>
         </section>
 
         <section className="legal-section">
@@ -521,13 +481,11 @@ function PrivacyPage() {
             <h2>Sécurité et protection</h2>
           </div>
           <ul className="privacy-list privacy-list-columns">
-            <li>Authentification des utilisateurs</li>
-            <li>Protection des mots de passe</li>
-            <li>Contrôle des rôles et des permissions</li>
-            <li>Contrôle d’accès aux cotations et aux fichiers</li>
-            <li>Validation des données saisies</li>
-            <li>Protection des secrets de configuration</li>
-            <li>Contrôle des accès aux PDF</li>
+            <li>Jetons d’accès JWT avec expiration et version de révocation</li>
+            <li>Hash des mots de passe avec PBKDF2-SHA256</li>
+            <li>Contrôles de rôles et d’accès côté API, dont les routes PDF authentifiées</li>
+            <li>Validation des entrées par les schémas API</li>
+            <li>Le frontend conserve le jeton dans sessionStorage ; aucun cookie d’authentification n’est configuré dans le code audité</li>
           </ul>
         </section>
 
@@ -536,41 +494,53 @@ function PrivacyPage() {
             <span className="material-symbols-outlined" aria-hidden="true">mail</span>
             <h2>Échanges par e-mail</h2>
           </div>
-          <p>Les devis peuvent être transmis aux clients par e-mail. Les informations nécessaires à cet envoi comprennent notamment l’adresse e-mail du client, les informations du devis et, lorsque cela est prévu, le PDF du devis en pièce jointe.</p>
-          <p className="privacy-note">Les identifiants du service d’envoi ne sont pas exposés dans l’application.</p>
-        </section>
-
-        <section className="legal-section">
-          <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">description</span>
-            <h2>Données des clients et des devis</h2>
-          </div>
-          <p>Les données des clients et les informations commerciales contenues dans les cotations sont utilisées dans le cadre de la préparation, du suivi, de la génération et de l’envoi des devis de l’entreprise.</p>
-          <p className="privacy-note">Le client ne dispose pas d’un accès direct à ProQuote ERP.</p>
-        </section>
-
-        <section className="legal-section">
-          <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">schedule</span>
-            <h2>Conservation des données</h2>
-          </div>
-          <p>Les données sont conservées dans le système conformément aux besoins de gestion de l’entreprise. Les durées de conservation applicables doivent être définies et validées par Trident Oil Services.</p>
+          <p>
+            Le code peut envoyer un devis en pièce jointe PDF et des relances par e-mail à l’adresse
+            enregistrée sur le devis. L’envoi dépend de la configuration SMTP de l’environnement ;
+            le fournisseur et les règles de conservation de ses journaux ne sont pas déterminés par
+            le dépôt.
+          </p>
         </section>
 
         <section className="legal-section">
           <div className="legal-section-heading">
             <span className="material-symbols-outlined" aria-hidden="true">cloud</span>
-            <h2>Hébergement et services externes</h2>
+            <h2>Hébergement et ressources externes</h2>
           </div>
-          <p>L’hébergement de production et les services externes effectivement utilisés ne sont pas confirmés dans le système audité. Une configuration future existe, mais aucun déploiement de production n’a été confirmé.</p>
+          <ul className="privacy-list">
+            <li>Le Blueprint déclare l’API, le frontend, PostgreSQL et le stockage PDF sur Render ; le déploiement et sa région réelle doivent être confirmés dans le Dashboard Render.</li>
+            <li>Le frontend charge les polices Inter et Material Symbols depuis Google Fonts.</li>
+            <li>Les e-mails utilisent un serveur SMTP configuré par variables d’environnement ; le fournisseur effectivement retenu doit être confirmé dans Render.</li>
+            <li>Aucun modèle ou parcours d’authentification client final n’a été trouvé dans le code audité.</li>
+          </ul>
+        </section>
+
+        <section className="legal-section">
+          <div className="legal-section-heading">
+            <span className="material-symbols-outlined" aria-hidden="true">schedule</span>
+            <h2>Suppression, export et conservation</h2>
+          </div>
+          <p>
+            Des routes de suppression administrative existent pour les comptes, les demandes
+            d’accès et les devis, mais aucune procédure d’exercice des droits ni aucun export global
+            n’est défini. La suppression d’un compte peut aussi être contrainte par les références
+            conservées dans les journaux. Aucun calendrier de conservation n’est défini dans le code ;
+            la durée réelle des bases, journaux et sauvegardes doit être vérifiée auprès de
+            l’organisation et des fournisseurs concernés.
+          </p>
         </section>
 
         <section className="legal-section">
           <div className="legal-section-heading">
             <span className="material-symbols-outlined" aria-hidden="true">contact_support</span>
-            <h2>Contact</h2>
+            <h2>Informations à valider</h2>
           </div>
-          <p>Pour toute question relative à la confidentialité ou aux données traitées dans ProQuote ERP, veuillez contacter le responsable désigné par Trident Oil Services.</p>
+          <p>
+            L’identité et les coordonnées du responsable du traitement, les finalités et bases
+            juridiques, les destinataires et transferts, les durées de conservation, les modalités
+            d’exercice des droits et le contact dédié doivent être fournis et validés par
+            l’organisation avant publication.
+          </p>
         </section>
 
       </div>
@@ -600,36 +570,10 @@ function SupportPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">build</span>
-            <h2>Problèmes courants</h2>
-          </div>
-          <div className="support-issue-list">
-            <div className="support-issue">
-              <h3>Envoi d’un devis par e-mail</h3>
-              <p>Vérifier que l’adresse e-mail du client est correctement renseignée et qu’elle existe.</p>
-            </div>
-            <div className="support-issue">
-              <h3>Accès au système</h3>
-              <p>Vérifier que la demande d’accès a été validée par l’Administrateur et que les identifiants sont correctement renseignés.</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="legal-section support-contact-section">
-          <div className="legal-section-heading">
             <span className="material-symbols-outlined" aria-hidden="true">support_agent</span>
-            <h2>Besoin d’assistance ?</h2>
+            <h2>Informations indisponibles</h2>
           </div>
-          <p>Pour toute difficulté avec ProQuote ERP, contactez l’administrateur du système.</p>
-          <a
-            className="support-contact-button"
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=tridentoilservices@gmail.com&su=Assistance%20technique%20%E2%80%94%20ProQuote%20ERP"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span className="material-symbols-outlined" aria-hidden="true">mail</span>
-            Contacter le support technique
-          </a>
+          <p>Les informations de support technique ne sont pas disponibles.</p>
         </section>
       </div>
     </main>
@@ -942,7 +886,7 @@ function LoginPage({
               <a href="/mentions-legales">Mentions légales</a>
               <a href="/confidentialite">Confidentialité</a>
             </div>
-            <p>© 2026 Trident Oil Services. Tous droits réservés.</p>
+            <p>ProQuote ERP</p>
           </footer>
         </div>
       </main>
@@ -1140,7 +1084,7 @@ function AccessRequestPage({ onBackToLogin }: { onBackToLogin: () => void }) {
       </div>
 
       <footer className="access-request-footer">
-        <p>© 2026 Trident Oil Services. Tous droits réservés.</p>
+        <p>ProQuote ERP</p>
       </footer>
     </main>
   )
@@ -1708,7 +1652,8 @@ function AdminDashboardPage({
     setQuotationFormOpen(true)
   }
 
-  const calculateArticleLineTotal = (article: ArticleLine) => article.quantity * article.unit_price
+  const calculateArticleLineTotal = (article: ArticleLine) =>
+    Math.round((article.quantity * article.unit_price + Number.EPSILON) * 100) / 100
 
   const handleQuotationFormChange = (field: keyof QuotationFormState, value: string) => {
     setQuotationForm((current) => ({
@@ -1784,8 +1729,18 @@ function AdminDashboardPage({
       return
     }
 
-    if (!payload.articles.length || payload.articles.some((article) => !article.designation || !article.quantity || !article.unit_price)) {
-      window.alert('Chaque article doit avoir une désignation, une quantité et un prix unitaire.')
+    if (
+      !payload.articles.length ||
+      payload.articles.some(
+        (article) =>
+          !article.designation ||
+          !Number.isFinite(article.quantity) ||
+          article.quantity <= 0 ||
+          !Number.isFinite(article.unit_price) ||
+          article.unit_price < 0,
+      )
+    ) {
+      window.alert('Chaque article doit avoir une désignation, une quantité positive et un prix unitaire valide.')
       return
     }
 
@@ -2672,7 +2627,8 @@ function AdminDashboardPage({
                           />
                           <input
                             type="number"
-                            min={1}
+                            min={0.01}
+                            step={0.01}
                             value={article.quantity}
                             onChange={(event) => handleArticleChange(index, 'quantity', event.target.value)}
                             required
@@ -2699,7 +2655,7 @@ function AdminDashboardPage({
                       ))}
                     </div>
                     <div className="form-row full-width">
-                      <label>Total du devis</label>
+                      <label>Montant total du devis (sans calcul de TVA)</label>
                       <div className="quotation-total">
                         {formatCurrency(quotationForm.articles.reduce((sum, article) => sum + calculateArticleLineTotal(article), 0))}
                       </div>
@@ -3045,7 +3001,7 @@ function AdminDashboardPage({
 
                 <div className="issue-block">
                   <h5>Assistance technique</h5>
-                  <p>Pour toute difficulté technique, consulter la page <a href="/support-technique">Support technique</a> depuis l’espace d’assistance interne.</p>
+                  <p>Les informations de support technique ne sont pas disponibles. <a href="/support-technique">Consulter la page Support technique</a>.</p>
                 </div>
               </div>
             </div>
