@@ -19,3 +19,15 @@ def calculate_quotation_total(articles: Iterable) -> Decimal:
             line_total = article.get("line_total") if isinstance(article, dict) else None
         total += Decimal(line_total)
     return total.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def calculate_vat_amount(
+    tax_base: Decimal,
+    vat_mode: str | None,
+    vat_rate: Decimal | None,
+) -> Decimal:
+    if vat_mode != "avec_tva" or vat_rate is None:
+        return Decimal("0.00")
+
+    amount = Decimal(tax_base) * Decimal(vat_rate) / Decimal("100")
+    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

@@ -63,6 +63,15 @@ def create_quotation(
         delivery_duration=payload.delivery_duration,
         incoterm=payload.incoterm.strip() if payload.incoterm else None,
         special_conditions=payload.special_conditions,
+        vat_mode=payload.vat_mode,
+        vat_code=payload.vat_code.strip() if payload.vat_mode == "avec_tva" else None,
+        vat_rate=payload.vat_rate if payload.vat_mode == "avec_tva" else None,
+        payment_method=(
+            payload.payment_method.strip() or None if payload.payment_method else None
+        ),
+        payment_terms=(
+            payload.payment_terms.strip() or None if payload.payment_terms else None
+        ),
         created_by=current_user.id,
     )
     db.add(quotation)
@@ -208,6 +217,36 @@ def update_quotation(
         quotation.incoterm = payload.incoterm.strip() or None
     if payload.special_conditions is not None:
         quotation.special_conditions = payload.special_conditions
+    if payload.vat_mode == "sans_tva":
+        quotation.vat_mode = "sans_tva"
+        quotation.vat_code = None
+        quotation.vat_rate = None
+    elif payload.vat_mode == "avec_tva":
+        quotation.vat_mode = "avec_tva"
+        quotation.vat_code = payload.vat_code
+        quotation.vat_rate = payload.vat_rate
+    elif payload.vat_code is not None or payload.vat_rate is not None:
+        if quotation.vat_mode != "avec_tva":
+            raise HTTPException(
+                status_code=422,
+                detail="Set vat_mode to avec_tva before updating VAT code or rate",
+            )
+        quotation.vat_code = payload.vat_code
+        quotation.vat_rate = payload.vat_rate
+    if "payment_method" in payload.model_fields_set:
+        quotation.payment_method = (
+            payload.payment_method.strip() or None if payload.payment_method else None
+        )
+    if "payment_terms" in payload.model_fields_set:
+        quotation.payment_terms = (
+            payload.payment_terms.strip() or None if payload.payment_terms else None
+        )
+
+    if quotation.vat_mode == "avec_tva" and (not quotation.vat_code or quotation.vat_rate is None):
+        raise HTTPException(
+            status_code=422,
+            detail="A VAT code and rate are required when VAT applies",
+        )
 
     if payload.articles is not None:
         if not payload.articles:

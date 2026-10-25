@@ -73,6 +73,11 @@ type QuotationFormState = {
   delivery_duration: string
   incoterm: string
   special_conditions: string
+  vat_mode: string
+  vat_code: string
+  vat_rate: string
+  payment_method: string
+  payment_terms: string
   articles: ArticleLine[]
 }
 
@@ -93,6 +98,11 @@ const defaultQuotationForm: QuotationFormState = {
   delivery_duration: '',
   incoterm: '',
   special_conditions: '',
+  vat_mode: '',
+  vat_code: '',
+  vat_rate: '',
+  payment_method: '',
+  payment_terms: '',
   articles: [{ ...defaultArticleLine }],
 }
 
@@ -342,7 +352,7 @@ function LegalNoticesPage() {
         <div className="legal-page-heading">
           <p>PROQUOTE ERP</p>
           <h1>Mentions légales</h1>
-          <span>Les informations juridiques de l’éditeur doivent être confirmées avant publication.</span>
+          <span>Informations relatives à l’éditeur et à l’hébergement du service.</span>
         </div>
 
         <section className="legal-section">
@@ -362,16 +372,12 @@ function LegalNoticesPage() {
             <h2>Hébergement</h2>
           </div>
           <p>
-            Plateforme d’hébergement configurée : Render. Le projet y déclare l’API, le frontend
-            statique, PostgreSQL, les tâches planifiées et le stockage persistant des PDF dans
-            <code>render.yaml</code>. La région réellement utilisée et les informations du compte
-            Render doivent être confirmées dans le tableau de bord.
+            <strong>Hébergement : Render.</strong>
           </p>
         </section>
 
         <p className="privacy-note">
-          La page <a href="/confidentialite">Confidentialité</a> décrit les éléments techniques
-          constatés dans le code ; elle ne remplace pas la validation juridique de l’éditeur.
+          La page <a href="/confidentialite">Confidentialité</a> décrit les éléments techniques constatés.
         </p>
       </div>
     </main>
@@ -544,7 +550,7 @@ function PrivacyPage() {
 
 function SupportPage() {
   const supportEmail = 'tridentoilservices@gmail.com'
-  const supportUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${supportEmail}&su=${encodeURIComponent('Assistance technique — ProQuote ERP')}&body=${encodeURIComponent('Bonjour,\n\nPage concernée :\nAction effectuée :\nMessage affiché :\n\nMerci de ne pas inclure de mot de passe ni de jeton d’accès.')}`
+  const supportUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${supportEmail}&su=${encodeURIComponent('Assistance technique — ProQuote ERP')}`
 
   return (
     <main className="legal-page-shell support-page-shell">
@@ -605,9 +611,7 @@ function SupportPage() {
             <h2>Contacter l’assistance</h2>
           </div>
           <p>
-            Pour toute difficulté, contactez l’administrateur du système. Le message préparé
-            inclut les informations utiles au diagnostic ; vérifiez son contenu et envoyez-le
-            depuis votre messagerie.
+            Pour toute difficulté, contactez l’administrateur du système. Le message préparé inclut les informations utiles au diagnostic ; confirmez son contenu et envoyez-le depuis votre messagerie.
           </p>
           <a
             className="support-contact-button"
@@ -1671,6 +1675,11 @@ function AdminDashboardPage({
       delivery_duration?: string | null
       incoterm?: string | null
       special_conditions?: string | null
+      vat_mode?: string
+      vat_code?: string | null
+      vat_rate?: number | string | null
+      payment_method?: string | null
+      payment_terms?: string | null
       articles?: Array<{ designation: string; quantity: number; unit?: string | null; unit_price: number }>
     } | null
 
@@ -1685,6 +1694,11 @@ function AdminDashboardPage({
       delivery_duration: quotationDetails.delivery_duration || '',
       incoterm: quotationDetails.incoterm || '',
       special_conditions: quotationDetails.special_conditions || '',
+      vat_mode: quotationDetails.vat_mode || 'sans_tva',
+      vat_code: quotationDetails.vat_code || '',
+      vat_rate: quotationDetails.vat_rate == null ? '' : String(quotationDetails.vat_rate),
+      payment_method: quotationDetails.payment_method || '',
+      payment_terms: quotationDetails.payment_terms || '',
       articles:
         quotationDetails.articles?.map((article) => ({
           designation: article.designation,
@@ -1763,6 +1777,11 @@ function AdminDashboardPage({
       delivery_duration: quotationForm.delivery_duration.trim(),
       incoterm: quotationForm.incoterm.trim(),
       special_conditions: quotationForm.special_conditions.trim() || null,
+      vat_mode: quotationForm.vat_mode,
+      vat_code: quotationForm.vat_mode === 'avec_tva' ? quotationForm.vat_code.trim() : null,
+      vat_rate: quotationForm.vat_mode === 'avec_tva' ? Number(quotationForm.vat_rate) : null,
+      payment_method: quotationForm.payment_method.trim() || null,
+      payment_terms: quotationForm.payment_terms.trim() || null,
       articles: quotationForm.articles.map((article) => ({
         designation: article.designation.trim(),
         quantity: article.quantity,
@@ -1773,6 +1792,19 @@ function AdminDashboardPage({
 
     if (!payload.client_name || !payload.client_email || !payload.validity_date || !payload.delivery_duration || !payload.incoterm) {
       window.alert('Veuillez remplir tous les champs obligatoires du devis.')
+      return
+    }
+
+    if (
+      !payload.vat_mode ||
+      (payload.vat_mode === 'avec_tva' &&
+        (!payload.vat_code ||
+          payload.vat_rate == null ||
+          !Number.isFinite(payload.vat_rate) ||
+          payload.vat_rate <= 0 ||
+          payload.vat_rate > 100))
+    ) {
+      window.alert('Choisissez le régime de TVA. Si la TVA s’applique, renseignez son code et son taux.')
       return
     }
 
@@ -2646,6 +2678,63 @@ function AdminDashboardPage({
                         placeholder="Notes complémentaires"
                       />
                     </div>
+                    <div className="form-row">
+                      <label>Régime de TVA</label>
+                      <select
+                        value={quotationForm.vat_mode}
+                        onChange={(event) => handleQuotationFormChange('vat_mode', event.target.value)}
+                        required
+                      >
+                        <option value="">Choisir un régime</option>
+                        <option value="sans_tva">Sans TVA</option>
+                        <option value="avec_tva">TVA applicable</option>
+                      </select>
+                    </div>
+                    {quotationForm.vat_mode === 'avec_tva' ? (
+                      <>
+                        <div className="form-row">
+                          <label>Code TVA</label>
+                          <input
+                            type="text"
+                            value={quotationForm.vat_code}
+                            onChange={(event) => handleQuotationFormChange('vat_code', event.target.value)}
+                            placeholder="Code communiqué par l’entreprise"
+                            required
+                          />
+                        </div>
+                        <div className="form-row">
+                          <label>Taux TVA (%)</label>
+                          <input
+                            type="number"
+                            min={0.01}
+                            max={100}
+                            step={0.01}
+                            value={quotationForm.vat_rate}
+                            onChange={(event) => handleQuotationFormChange('vat_rate', event.target.value)}
+                            placeholder="Taux applicable"
+                            required
+                          />
+                        </div>
+                      </>
+                    ) : null}
+                    <div className="form-row">
+                      <label>Mode de règlement</label>
+                      <input
+                        type="text"
+                        value={quotationForm.payment_method}
+                        onChange={(event) => handleQuotationFormChange('payment_method', event.target.value)}
+                        placeholder="Ex. virement bancaire"
+                      />
+                    </div>
+                    <div className="form-row full-width">
+                      <label>Échéance / modalités de règlement</label>
+                      <input
+                        type="text"
+                        value={quotationForm.payment_terms}
+                        onChange={(event) => handleQuotationFormChange('payment_terms', event.target.value)}
+                        placeholder="Saisir les modalités convenues"
+                      />
+                    </div>
                   </div>
 
                   <div className="form-section">
@@ -2701,12 +2790,29 @@ function AdminDashboardPage({
                         </div>
                       ))}
                     </div>
-                    <div className="form-row full-width">
-                      <label>Montant total du devis (sans calcul de TVA)</label>
-                      <div className="quotation-total">
-                        {formatCurrency(quotationForm.articles.reduce((sum, article) => sum + calculateArticleLineTotal(article), 0))}
-                      </div>
-                    </div>
+                    {(() => {
+                      const totalHT = quotationForm.articles.reduce(
+                        (sum, article) => sum + calculateArticleLineTotal(article),
+                        0,
+                      )
+                      const rate = Number(quotationForm.vat_rate)
+                      const vatAmount =
+                        quotationForm.vat_mode === 'avec_tva' && Number.isFinite(rate)
+                          ? Math.round((totalHT * rate / 100 + Number.EPSILON) * 100) / 100
+                          : 0
+                      return (
+                        <div className="form-row full-width">
+                          <label>Récapitulatif du devis</label>
+                          <div className="quotation-total">
+                            Total HT : {formatCurrency(totalHT)}
+                            <br />
+                            TVA : {formatCurrency(vatAmount)}
+                            <br />
+                            Total TTC : {formatCurrency(totalHT + vatAmount)}
+                          </div>
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   <div className="drawer-actions">

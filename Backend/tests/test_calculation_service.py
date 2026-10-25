@@ -1,6 +1,10 @@
 from decimal import Decimal
 
-from app.services.calculation_service import calculate_line_total, calculate_quotation_total
+from app.services.calculation_service import (
+    calculate_line_total,
+    calculate_quotation_total,
+    calculate_vat_amount,
+)
 
 
 def test_calculate_line_total_integers():
@@ -27,3 +31,24 @@ def test_calculate_quotation_total_multiple_articles():
         {"line_total": Decimal("0.75")},
     ]
     assert calculate_quotation_total(articles) == Decimal("251.00")
+
+
+def test_calculate_vat_amount_rounds_half_up():
+    assert calculate_vat_amount(
+        Decimal("1000.00"),
+        "avec_tva",
+        Decimal("18.00"),
+    ) == Decimal("180.00")
+    assert calculate_vat_amount(
+        Decimal("100.03"),
+        "avec_tva",
+        Decimal("18.00"),
+    ) == Decimal("18.01")
+
+
+def test_calculate_vat_amount_is_zero_for_explicit_no_vat():
+    assert calculate_vat_amount(
+        Decimal("1000.00"),
+        "sans_tva",
+        None,
+    ) == Decimal("0.00")

@@ -117,6 +117,72 @@ def test_create_quotation_persists_incoterm_value():
     assert retrieved.json()["total_amount"] == 200
 
 
+def test_create_quotation_persists_vat_and_payment_terms():
+    seed_admin("admin123")
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "admin123"},
+    )
+    assert login.status_code == 200
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    response = client.post(
+        "/api/v1/quotations/",
+        headers=headers,
+        json={
+            "client_name": "Client TVA",
+            "client_email": "tva@example.com",
+            "validity_date": "2026-12-31",
+            "delivery_duration": "10 jours",
+            "incoterm": "DDP",
+            "vat_mode": "avec_tva",
+            "vat_code": "CODE-TEST",
+            "vat_rate": 18,
+            "payment_method": "Virement bancaire",
+            "payment_terms": "30 jours",
+            "articles": [
+                {
+                    "designation": "Prestation taxable",
+                    "quantity": 2,
+                    "unit": "u",
+                    "unit_price": 100,
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["vat_mode"] == "avec_tva"
+    assert data["vat_code"] == "CODE-TEST"
+    assert Decimal(data["vat_rate"]) == Decimal("18.00")
+    assert Decimal(data["vat_amount"]) == Decimal("36.00")
+    assert Decimal(data["total_amount"]) == Decimal("200.00")
+    assert Decimal(data["total_including_tax"]) == Decimal("236.00")
+    assert data["payment_method"] == "Virement bancaire"
+    assert data["payment_terms"] == "30 jours"
+
+    updated = client.put(
+        f"/api/v1/quotations/{data['id']}",
+        headers=headers,
+        json={
+            "vat_mode": "sans_tva",
+            "payment_method": None,
+            "payment_terms": None,
+        },
+    )
+
+    assert updated.status_code == 200, updated.text
+    updated_data = updated.json()
+    assert updated_data["vat_mode"] == "sans_tva"
+    assert updated_data["vat_code"] is None
+    assert updated_data["vat_rate"] is None
+    assert Decimal(updated_data["vat_amount"]) == Decimal("0.00")
+    assert Decimal(updated_data["total_including_tax"]) == Decimal("200.00")
+    assert updated_data["payment_method"] is None
+    assert updated_data["payment_terms"] is None
+
+
 def test_download_quotation_pdf_returns_generated_document(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "PDF_STORAGE_PATH", str(tmp_path))
     seed_admin("admin123")
@@ -193,8 +259,8 @@ def test_pdf_renders_incoterm_value_instead_of_approval_block():
     assert "Incoterm" in html
     assert "EXW" in html
     assert "Bon pour accord" not in html
-    assert "TVA" not in html
-    assert "Total TTC" not in html
+    assert "Sans TVA" in html
+    assert "Total TTC" in html
     assert "Virement bancaire" not in html
     assert "À la commande" not in html
     assert "Total HT</span>" in html

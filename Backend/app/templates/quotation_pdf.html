@@ -417,6 +417,18 @@
             <p class="amount-in-words">
               {{ amount_in_words }}
             </p>
+            {% if quotation.payment_method %}
+              <section class="detail-card">
+                <h2>Mode de règlement</h2>
+                <p>{{ quotation.payment_method }}</p>
+              </section>
+            {% endif %}
+            {% if quotation.payment_terms %}
+              <section class="detail-card">
+                <h2>Échéance / modalités de règlement</h2>
+                <p>{{ quotation.payment_terms }}</p>
+              </section>
+            {% endif %}
             {% if incoterm_label %}
               <section class="detail-card detail-card--incoterm">
                 <h2>Incoterm</h2>
@@ -431,9 +443,24 @@
             {% endif %}
           </div>
           <div class="summary-right">
-            <div class="total-row total-row--grand">
+            <div class="total-row">
               <span>Total HT</span>
               <strong>{{ format_currency(quotation_total) }}</strong>
+            </div>
+            {% if quotation.vat_mode == "avec_tva" %}
+              <div class="total-row">
+                <span>TVA {{ quotation.vat_code }} ({{ quotation.vat_rate }} %)</span>
+                <strong>{{ format_currency(vat_amount) }}</strong>
+              </div>
+            {% else %}
+              <div class="total-row">
+                <span>TVA</span>
+                <strong>Sans TVA</strong>
+              </div>
+            {% endif %}
+            <div class="total-row total-row--grand">
+              <span>Total TTC</span>
+              <strong>{{ format_currency(total_including_tax) }}</strong>
             </div>
             {% if company_bank_details %}
               <section class="detail-card">

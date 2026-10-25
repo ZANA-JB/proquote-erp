@@ -29,9 +29,13 @@ services:
       - key: COMPANY_NAME
         sync: false
       - key: COMPANY_ADDRESS
-        sync: false
+        value: Abidjan, Cocody Abatta Extension Nord, derrière la Station Ola Energy
       - key: COMPANY_CONTACTS
-        sync: false
+        value: |
+          Téléphone : 07 49 01 49 66
+          Email : tridentoilservices@gmail.com
+          RCCM : CI-ABJ03-2024-B12-07507
+          CC : 2403807 J - TEE
       - key: SMTP_HOST
         sync: false
       - key: SMTP_USER

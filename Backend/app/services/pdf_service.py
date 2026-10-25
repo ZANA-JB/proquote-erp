@@ -10,7 +10,11 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.core.config import settings
 from app.models.quotation import Quotation
-from app.services.calculation_service import calculate_line_total, calculate_quotation_total
+from app.services.calculation_service import (
+    calculate_line_total,
+    calculate_quotation_total,
+    calculate_vat_amount,
+)
 
 
 TEMPLATE_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "templates"))
@@ -116,6 +120,12 @@ def render_quotation_html(quotation: Quotation) -> str:
     template = env.get_template("quotation_pdf.html")
 
     quotation_total = _get_quotation_total(quotation)
+    vat_amount = calculate_vat_amount(
+        quotation_total,
+        getattr(quotation, "vat_mode", "sans_tva"),
+        getattr(quotation, "vat_rate", None),
+    )
+    total_including_tax = quotation_total + vat_amount
     articles = list(getattr(quotation, "articles", []) or [])
     return template.render(
         company_name=settings.COMPANY_NAME,
@@ -125,7 +135,9 @@ def render_quotation_html(quotation: Quotation) -> str:
         company_logo_url=_encode_logo_to_data_uri(),
         quotation=quotation,
         quotation_total=quotation_total,
-        amount_in_words=_number_to_words_fr(quotation_total),
+        vat_amount=vat_amount,
+        total_including_tax=total_including_tax,
+        amount_in_words=_number_to_words_fr(total_including_tax),
         incoterm_label=_get_incoterm_label(quotation),
         article_line_total=_get_article_line_total,
         format_quantity=_format_quantity,

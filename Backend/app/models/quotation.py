@@ -36,6 +36,11 @@ class Quotation(Base):
     delivery_duration = Column(String, nullable=True)
     incoterm = Column(String, nullable=True)
     special_conditions = Column(Text, nullable=True)
+    vat_mode = Column(String(20), nullable=False, default="sans_tva")
+    vat_code = Column(String(100), nullable=True)
+    vat_rate = Column(Numeric(5, 2), nullable=True)
+    payment_method = Column(String(250), nullable=True)
+    payment_terms = Column(String(500), nullable=True)
     status = Column(Enum(QuotationStatus), nullable=False, default=QuotationStatus.BROUILLON, index=True)
     total_amount = Column(Numeric(12, 2), nullable=False, default=0)
     is_paid = Column(Boolean, nullable=False, default=False)
@@ -48,3 +53,13 @@ class Quotation(Base):
     @property
     def purchase_indicator(self) -> str:
         return "VERT" if self.status == QuotationStatus.ACCEPTEE else "ROUGE"
+
+    @property
+    def vat_amount(self):
+        from app.services.calculation_service import calculate_vat_amount
+
+        return calculate_vat_amount(self.total_amount, self.vat_mode, self.vat_rate)
+
+    @property
+    def total_including_tax(self):
+        return self.total_amount + self.vat_amount

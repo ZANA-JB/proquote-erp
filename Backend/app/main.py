@@ -60,13 +60,25 @@ def startup_event():
 
                 quotations = conn.execute(text("PRAGMA table_info('quotations')")).mappings().all()
                 cols = [r['name'] for r in quotations]
-                needed = []
-                for c in ('client_address', 'client_reference', 'special_conditions'):
-                    if c not in cols:
-                        needed.append(c)
-                for c in needed:
-                    logger.info(f"Adding missing column to quotations: {c}")
-                    conn.execute(text(f"ALTER TABLE quotations ADD COLUMN {c} TEXT"))
+                quotation_columns = {
+                    "client_address": "TEXT",
+                    "client_reference": "TEXT",
+                    "special_conditions": "TEXT",
+                    "vat_mode": "VARCHAR(20) DEFAULT 'sans_tva' NOT NULL",
+                    "vat_code": "VARCHAR(100)",
+                    "vat_rate": "NUMERIC(5, 2)",
+                    "payment_method": "VARCHAR(250)",
+                    "payment_terms": "VARCHAR(500)",
+                }
+                for column_name, column_type in quotation_columns.items():
+                    if column_name not in cols:
+                        logger.info(f"Adding missing column to quotations: {column_name}")
+                        conn.execute(
+                            text(
+                                f"ALTER TABLE quotations ADD COLUMN "
+                                f"{column_name} {column_type}"
+                            )
+                        )
     except Exception as exc:
         logger.warning(f"Runtime migration check failed: {exc}")
 

@@ -182,14 +182,39 @@ def test_generated_pdf_omits_unavailable_payment_tax_and_bank_information(
 
     _, text = _generate_and_read_pdf(quotation, isolated_pdf_environment)
 
-    assert "TVA" not in text
-    assert "TTC" not in text
+    assert "TVA" in text
+    assert "Sans TVA" in text
+    assert "Total TTC" in text
     assert "Règlement" not in text
     assert "Échéance" not in text
     assert "Coordonnées bancaires" not in text
     assert "Incoterm" not in text
     assert "Non précisé" not in text
     assert "Article sans informations facultatives" in text
+
+
+def test_generated_pdf_calculates_single_rate_vat_and_payment_terms(
+    isolated_pdf_environment,
+):
+    quotation = _quotation(
+        [_article("Prestation soumise à TVA", "1", "1000")],
+        vat_mode="avec_tva",
+        vat_code="CODE-ENTREPRISE",
+        vat_rate=Decimal("18.00"),
+        payment_method="Virement bancaire",
+        payment_terms="30 jours après réception de la facture",
+    )
+
+    _, text = _generate_and_read_pdf(quotation, isolated_pdf_environment)
+
+    assert "CODE-ENTREPRISE" in text
+    assert "18" in text
+    assert "180 FCFA" in text
+    assert "1 000 FCFA" in text
+    assert "1 180 FCFA" in text
+    assert "mille cent quatre-vingts FCFA" in text
+    assert "Virement bancaire" in text
+    assert "30 jours après réception de la facture" in text
 
 
 def test_generated_pdf_repeats_table_heading_across_pages(isolated_pdf_environment):

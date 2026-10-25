@@ -39,6 +39,21 @@ Toutes les routes sont préfixées par `/api/v1/`.
 
 La documentation Swagger est disponible sur `/docs`.
 
+## TVA et modalités de règlement des devis
+
+Le montant persisté `total_amount` reste le total HT afin de conserver la
+compatibilité avec les données et rapports existants. La TVA est choisie par
+devis : soit « sans TVA », soit un code et un taux saisis par l’utilisateur.
+Aucun code ni taux n’est prérempli. Le montant de TVA est calculé sur le total
+HT, arrondi au centime, puis ajouté pour obtenir le total TTC affiché dans le
+PDF et l’API. Les devis déjà enregistrés sont migrés avec le régime explicite
+« sans TVA », suivant la confirmation de l’organisation.
+
+Le mode de règlement et les modalités/échéances sont facultatifs et enregistrés
+avec le devis. Ils ne sont affichés sur le PDF que lorsqu’ils sont renseignés.
+`payment_reminders.due_date` reste une date de relance et n’est pas utilisée
+comme échéance commerciale du devis.
+
 ## Déploiement Render
 
 Le fichier `render.yaml` à la racine déclare un frontend statique, une API Docker,
