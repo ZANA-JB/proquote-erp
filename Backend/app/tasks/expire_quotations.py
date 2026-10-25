@@ -3,6 +3,7 @@ from datetime import date
 from app.core.database import SessionLocal
 from app.models.audit_log import AuditLog
 from app.models.quotation import Quotation, QuotationStatus
+from app.models.user import User  # noqa: F401  # Registers AuditLog's foreign-key target.
 from app.services.status_service import change_status, StatusTransitionError
 from app.tasks.celery_app import celery_app
 

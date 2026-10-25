@@ -5,6 +5,7 @@ services:
     dockerfilePath: ./Backend/Dockerfile
     dockerContext: .
     plan: 0.5c-512mb
+    preDeployCommand: alembic upgrade head
     healthCheckPath: /health
     disk:
       name: proquote-pdf-files
@@ -23,11 +24,6 @@ services:
         value: https://proquote-erp-frontend.onrender.com
       - key: PDF_STORAGE_PATH
         value: /var/data/pdfs
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: proquote-erp-queue
-          property: connectionString
       - key: COMPANY_LOGO_URL
         value: /app/REFERENCE/logo.jpeg
       - key: COMPANY_NAME
@@ -49,66 +45,49 @@ services:
       - key: COMPANY_BANK_DETAILS
         sync: false
 
-  - type: worker
-    name: proquote-erp-worker
+  - type: cron
+    name: proquote-erp-expire-quotations
     runtime: docker
     dockerfilePath: ./Backend/Dockerfile
     dockerContext: .
     plan: 0.5c-512mb
-    dockerCommand: celery -A app.tasks.celery_app:celery_app worker --beat --loglevel=INFO
+    schedule: "0 * * * *"
+    dockerCommand: python -m app.tasks.run_expiration_job
     envVars:
       - key: ENVIRONMENT
         value: production
       - key: DATABASE_URL
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: DATABASE_URL
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: SECRET_KEY
-      - key: REDIS_URL
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: REDIS_URL
-      - key: SMTP_HOST
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: SMTP_HOST
-      - key: SMTP_USER
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: SMTP_USER
-      - key: SMTP_PASSWORD
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: SMTP_PASSWORD
-      - key: SMTP_PORT
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: SMTP_PORT
-      - key: MAIL_FROM
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: MAIL_FROM
-      - key: COMPANY_NAME
-        fromService:
-          type: web
-          name: proquote-erp-api
-          envVarKey: COMPANY_NAME
+        fromDatabase:
+          name: proquote-erp-db
+          property: connectionString
 
-  - type: keyvalue
-    name: proquote-erp-queue
-    plan: 256mb
-    ipAllowList: []
+  - type: cron
+    name: proquote-erp-payment-reminders
+    runtime: docker
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: .
+    plan: 0.5c-512mb
+    schedule: "0 8 * * *"
+    dockerCommand: python -m app.tasks.run_payment_reminders_job
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: proquote-erp-db
+          property: connectionString
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: COMPANY_NAME
+        sync: false
 
   - type: web
     name: proquote-erp-frontend
@@ -133,4 +112,4 @@ databases:
   - name: proquote-erp-db
     databaseName: proquote
     user: proquote
-    plan: 0.5c-1g
+    plan: basic-1gb

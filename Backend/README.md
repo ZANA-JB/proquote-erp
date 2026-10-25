@@ -12,27 +12,19 @@ Copiez `.env.example` vers `.env` et ajustez les valeurs.
 - `SMTP_PORT=465` pour SSL/TLS direct.
 - `MAIL_FROM`: adresse de l'expéditeur.
   
-Note: pour les tests, vous pouvez temporairement utiliser une adresse personnelle, mais en production remplacez ces valeurs par celles fournies par l'entreprise. Assurez-vous également de définir `SECRET_KEY` dans `.env` avant toute mise en production.
+Pour les essais, utilisez uniquement un serveur SMTP de test ou une configuration explicitement autorisée. Aucun courriel réel n'est nécessaire pour exécuter les tests automatisés. Ne stockez pas de secrets dans le dépôt. Définissez une `SECRET_KEY` sûre avant toute mise en production.
 - `ALLOWED_ORIGINS`: liste d'origines séparées par des virgules pour CORS.
 - `PDF_STORAGE_PATH`: emplacement de génération des PDF.
 
-## Tâches Celery
+## Tâches planifiées et relances
 
-- Démarrer un worker :
-  ```bash
-  cd Backend
-  celery -A app.tasks.celery_app worker --loglevel=info
-  ```
-- Démarrer le planificateur (beat) :
-  ```bash
-  cd Backend
-  celery -A app.tasks.celery_app beat --loglevel=info
-  ```
-- Lancer worker et beat ensemble en production :
-  ```bash
-  cd Backend
-  celery -A app.tasks.celery_app worker --beat --loglevel=info
-  ```
+Les tâches Celery restent utilisées par les scripts de jobs, mais ni worker,
+ni Redis/Key Value, ni Celery Beat ne sont nécessaires au Blueprint Render.
+Celery utilise le broker mémoire local ; il ne doit donc pas servir de file
+inter-processus en production. Deux Cron Render exécutent directement les tâches :
+expiration horaire et relances de paiement quotidiennes à 08:00 UTC. Chaque job
+refuse de s'exécuter si les migrations ne sont pas à jour. Les relances exigent
+une configuration SMTP privée dans l'environnement du Cron.
 
 ## API
 
@@ -49,11 +41,16 @@ La documentation Swagger est disponible sur `/docs`.
 
 ## Déploiement Render
 
-Le fichier `render.yaml` à la racine déclare le frontend statique, l'API Docker, PostgreSQL, Render Key Value et le worker Celery. Le dépôt connecté à Render doit contenir ensemble `Backend/`, `Frontend/` et `REFERENCE/`.
+Le fichier `render.yaml` à la racine déclare un frontend statique, une API Docker,
+PostgreSQL, un disque persistant pour les PDF et deux Cron périodiques. Il ne
+déclare ni Redis/Key Value ni worker Celery. Le déploiement Render n'a pas été
+réalisé ou confirmé.
 
-- L'image API exécute `alembic upgrade head`, puis démarre Uvicorn sur `0.0.0.0:$PORT`.
+- Render exécute `alembic upgrade head` comme commande de pré-déploiement de l'API,
+  puis l'image démarre Uvicorn sur `0.0.0.0:$PORT`.
 - Le disque persistant Render est monté sur `/var/data`; les PDF sont enregistrés sous `/var/data/pdfs`.
-- Le worker Celery utilise Render Key Value pour les rappels planifiés et l'expiration des devis.
+- Le Cron horaire appelle `python -m app.tasks.run_expiration_job`. Le Cron quotidien
+  appelle `python -m app.tasks.run_payment_reminders_job`.
 - Après le premier déploiement, ouvrir le Shell du service API et lancer `python -m app.bootstrap_admin` pour créer le premier administrateur. Le mot de passe est saisi de façon interactive et n'est pas conservé dans le dépôt.
 - Renseigner SMTP et `COMPANY_BANK_DETAILS` dans les variables privées du Dashboard Render, jamais dans le dépôt.
 - `VITE_RENDER_DEPLOYED` reste à `false` dans le blueprint. Le passer à `true` et redéployer le frontend uniquement après vérification que l'API, PostgreSQL et le frontend sont réellement opérationnels sur Render.

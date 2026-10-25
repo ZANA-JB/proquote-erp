@@ -1,0 +1,134 @@
+FONCTIONNEMENT DES STATUTS DES COTATIONS
+===========================================
+
+RÈGLE MÉTIER EN UNE PHRASE
+-------------------------
+Une cotation démarre en BROUILLON, devient ENVOYEE après l'envoi confirmé du devis,
+peut ensuite être ACCEPTEE, REFUSEE ou EXPIREE, et une fois dans un état final,
+aucune autre transition n'est autorisée.
+
+1) SOURCE DE VÉRITÉ
+-------------------
+Les statuts sont définis dans l'énumération QuotationStatus du backend
+(Backend/app/models/quotation.py).
+
+Valeurs possibles :
+- BROUILLON
+- ENVOYEE
+- ACCEPTEE
+- REFUSEE
+- EXPIREE
+
+2) SIGNIFICATION DE CHAQUE STATUT
+---------------------------------
+- BROUILLON : cotation créée mais non envoyée.
+- ENVOYEE : devis envoyé par email et PDF disponible.
+- ACCEPTEE : cotation acceptée par le client et donc validée dans le processus métier.
+- REFUSEE : cotation rejetée ou annulée par le client / la société après envoi.
+- EXPIREE : cotation envoyée mais arrivée en fin de validité selon la règle métier.
+
+3) CE QUE SIGNIFIE “ACCEPTÉE PAR LE CLIENT”
+--------------------------------------------
+Dans ce projet, une cotation est considérée comme acceptée uniquement lorsqu'elle passe à :
+ACCEPTEE
+
+Cela signifie que le client a validé la proposition commerciale et que la cotation est
+considérée comme conclue / rentable / opérationnellement confirmée.
+
+Ce statut est la seule transition qui compte comme validation commerciale.
+
+La transition est faite via l'endpoint :
+PATCH /api/v1/quotations/{quotation_id}/status
+
+Exemple de payload :
+{"new_status":"ACCEPTEE"}
+
+4) TRANSITIONS AUTORISÉES
+------------------------
+- BROUILLON -> ENVOYEE
+- ENVOYEE -> ACCEPTEE
+- ENVOYEE -> REFUSEE
+- ENVOYEE -> EXPIREE
+
+États finaux (aucune transition possible) :
+- ACCEPTEE -> aucune transition
+- REFUSEE -> aucune transition
+- EXPIREE -> aucune transition
+
+La transition est faite via l'endpoint :
+PATCH /api/v1/quotations/{quotation_id}/status
+
+Exemple de payload :
+{"new_status":"ACCEPTEE"}
+
+4) TRANSITIONS AUTORISÉES
+------------------------
+- BROUILLON -> ENVOYEE
+- ENVOYEE -> ACCEPTEE
+- ENVOYEE -> REFUSEE
+- ENVOYEE -> EXPIREE
+
+États finaux (aucune transition possible) :
+- ACCEPTEE -> aucune transition
+- REFUSEE -> aucune transition
+- EXPIREE -> aucune transition
+
+5) RÈGLE SPÉCIALE POUR ENVOYEE
+-----------------------------
+Le passage BROUILLON -> ENVOYEE ne se fait pas manuellement par le simple endpoint
+change_status.
+
+Il est déclenché après l'envoi réel du devis par email, dans l'action d'envoi.
+Pour que cela soit possible, il faut normalement que :
+- le PDF de la cotation existe,
+- l'envoi email soit confirmé,
+- l'action métier valide le passage à ENVOYEE.
+
+Autrement dit :
+- créer la cotation = BROUILLON
+- envoyer le devis = ENVOYEE
+- valider le devis = ACCEPTEE
+
+6) EXPIRATION ET ANNULATION
+---------------------------
+- EXPIREE : uniquement depuis ENVOYEE, via la tâche métier d'expiration
+  (Backend/app/tasks/expire_quotations.py), quand la règle d'expiration est déclenchée.
+- REFUSEE : uniquement depuis ENVOYEE, via la logique métier de changement de statut.
+
+7) PERMISSIONS
+--------------
+- ADMIN et RESPONSABLE peuvent modifier le statut.
+- COLLABORATEUR ne peut pas modifier le statut via cet endpoint.
+- ADMIN, RESPONSABLE et COLLABORATEUR peuvent générer / télécharger le PDF selon les permissions.
+- Un COLLABORATEUR ne voit que ses propres cotations.
+- ADMIN et RESPONSABLE voient toutes les cotations.
+
+8) DASHBOARD ET STATISTIQUES
+---------------------------
+Les chiffres du dashboard sont calculés à partir des données de la table quotations.
+
+Taux de conversion :
+nombre de cotations ACCEPTEE / nombre de cotations ENVOYEE
+
+Si aucune cotation n'est ENVOYEE, le taux vaut 0.
+
+Le dashboard ne contient pas de valeurs statiques ; il calcule les données en temps réel.
+
+9) GRAPHIQUES
+-------------
+Les dashboards Manager et Admin utilisent le même endpoint :
+GET /api/v1/dashboard/charts?type=by_month
+
+Ce point représente le nombre de cotations créées par mois, calculé depuis la base.
+Les données sont relues régulièrement pour refléter les nouvelles créations.
+
+10) RÉSUMÉ SIMPLE
+-----------------
+Le flux métier normal est :
+BROUILLON -> ENVOYEE -> ACCEPTEE
+
+Les autres chemins sont des cas métier spécifiques :
+ENVOYEE -> REFUSEE
+ENVOYEE -> EXPIREE
+
+Une fois à ACCEPTEE, REFUSEE ou EXPIREE, la cotation ne bouge plus.

@@ -1,0 +1,1359 @@
+RAPPORT DE STAGE D’ASSISTANT-INGÉNIEUR
+
+CONCEPTION ET DÉVELOPPEMENT D’UN SYSTÈME INFORMATISÉ POUR
+L’AUTOMATISATION DE LA GESTION DES COTATIONS COMMERCIALES
+
+Structure d’accueil : Trident Oil Services, Abidjan, Côte d’Ivoire
+Établissement : Institut International d’Ingénierie de l’Eau et de l’Environnement (IIAA/2iE)
+Étudiant : Zana Jean-Baptiste KONE
+Maître de stage : M. Nelara Dominique KONE
+Responsable académique : Dr Babacar LEYE
+Année académique : 2025–2026
+Positionnement : Stage d’assistant-ingénieur – semestre 8
+
+
+RÉSUMÉ
+
+Trident Oil Services exerce dans le secteur des services pétroliers et des activités
+connexes. La préparation et le suivi des cotations commerciales nécessitent la collecte
+d’informations client, la description des articles ou prestations, le calcul des montants,
+la production d’un document commercial, sa transmission et le suivi de sa réponse. La
+présentation de départ décrit une organisation reposant sur des manipulations manuelles
+et des documents dispersés, qui expose l’entreprise aux ressaisies, aux erreurs et à une
+traçabilité insuffisante.
+
+Le projet vise à concevoir une application web métier qui centralise ce cycle. Le dépôt
+examiné contient un frontend React, TypeScript et Vite ainsi qu’une API Python/FastAPI.
+Le backend s’appuie sur SQLAlchemy, une base relationnelle, Alembic pour les migrations,
+des mécanismes d’authentification JWT et de contrôle d’accès par rôle, une génération de
+PDF à partir d’un gabarit HTML, des fonctions d’envoi d’e-mails, un historique d’actions,
+un tableau de bord et un traitement d’expiration des cotations. Les fonctions métier
+principales sont présentes dans le code et un journal de vérification contient notamment
+des réponses réussies à des opérations locales de connexion, de création et de
+modification. Lors de la vérification finale du 13 octobre 2026, les trois parcours
+runtime ont également réussi sur une API locale reliée à une base SQLite temporaire :
+authentification/session, tableau de bord/persistance et création/génération/
+téléchargement PDF. La suite backend a compté 32 tests réussis, 0 échoué et 3 ignorés.
+Le lint et le build frontend ont réussi après correction de problèmes ciblés dans
+`Frontend/src/App.tsx`. La configuration SMTP a été remplacée selon l’information
+communiquée par le porteur du projet, mais aucun courriel réel ni accusé de réception
+n’a été vérifié.
+
+La configuration du dépôt prévoit un déploiement sur Render avec frontend statique,
+API conteneurisée, PostgreSQL, stockage persistant des PDF et tâche planifiée horaire.
+Cette configuration constitue une préparation de déploiement, et non une preuve que
+l’application a été mise en service et validée sur Internet. De même, les fichiers de
+tests attestent de scénarios automatisés conçus et leurs résultats locaux sont
+consignés dans le présent rapport. Ces exécutions ne constituent pas une recette en
+production ni une validation formelle par l’entreprise.
+
+Les résultats mesurés sur le processus antérieur – temps de préparation, taux d’erreurs,
+délai d’envoi et satisfaction des utilisateurs – ne sont pas disponibles. Il n’est donc
+pas possible de quantifier l’impact réel de l’application. Le projet doit être présenté
+comme une solution logicielle métier structurée, assortie de preuves partielles, et non
+comme une intelligence artificielle, un déploiement opérationnel certifié ou une
+transformation dont les gains auraient déjà été mesurés.
+
+Mots-clés : cotation commerciale, devis, application web, API, contrôle d’accès,
+génération PDF, traçabilité, automatisation.
+
+
+TABLE DES MATIÈRES
+
+1. Introduction générale
+
+2. Contexte de l’entreprise et problématique
+
+3. Analyse des besoins et spécification fonctionnelle
+
+4. Conception et architecture de la solution
+
+5. Réalisation technique
+
+6. Sécurité, fiabilité et traçabilité
+
+7. Tests et qualité logicielle
+
+8. Résultats et évaluation de la transformation
+
+9. Pilotage du projet et conduite des travaux
+
+10. Déploiement et exploitation
+
+11. Limites et perspectives
+
+12. Conclusion générale
+
+Annexe A. Synthèse des principales routes API
+
+Annexe B. Sources documentaires et techniques examinées
+
+Annexe C. Références bibliographiques et documentaires
+
+LISTE DES FIGURES
+
+Figure 1. Cas d’utilisation et permissions réelles des profils
+
+Figure 2. États et transitions autorisées d’une cotation
+
+Figure 3. Séquence du cycle de vie d’une cotation
+
+Figure 4. Architecture applicative et intégrations
+
+Figure 5. Modèle de données dérivé des modèles SQLAlchemy et du schéma Alembic
+
+Figure 6. Déploiement Render déclaré, état opérationnel non confirmé
+
+
+1. INTRODUCTION GÉNÉRALE
+
+1.1. Contexte du stage
+
+Le stage s’inscrit dans la formation d’ingénieur de l’Institut International
+d’Ingénierie de l’Eau et de l’Environnement, pour l’année académique 2025–2026.
+Il a été réalisé au sein de Trident Oil Services, entreprise située à Abidjan, en
+Côte d’Ivoire, dont les activités relèvent du secteur pétrolier et des services associés.
+
+Le sujet porte sur la conception et le développement d’un système informatisé
+d’automatisation de la gestion des cotations commerciales. Dans les documents du projet,
+les termes « cotation » et « devis » désignent le document commercial préparé pour un
+client. Le titre retenu dans la note d’appréciation emploie « cotations commerciales » ;
+la présentation initiale utilise aussi « devis commerciaux ». Le présent rapport retient
+le titre de référence et emploie les deux termes selon le contexte.
+
+1.2. Démarche et périmètre du rapport
+
+Le rapport s’appuie sur la présentation initiale du projet, la note d’appréciation et de
+recommandations du 25 août 2026, les informations métier conservées dans le dépôt, la
+documentation technique et l’examen des modèles, routes, services, tests et fichiers de
+déploiement présents localement.
+
+Aucun cahier des charges formel établi au début du stage, planning détaillé, compte rendu
+de réunion, procès-verbal de recette entreprise, rapport exhaustif d’exécution des tests
+ou preuve de fonctionnement public de Render n’a été trouvé parmi les pièces exploitées.
+Le besoin initial est décrit comme ayant été communiqué principalement oralement. Le
+rapport restitue en conséquence les exigences présentes dans la présentation et les
+documents, sans leur attribuer une validation formelle qui n’est pas documentée.
+
+Le dépôt ayant évolué et n’étant pas accompagné d’une étiquette ou d’un procès-verbal
+identifiant précisément la version présentée, les observations techniques décrivent
+l’état local des sources examinées. Elles ne peuvent pas être automatiquement
+extrapolées à la version du prototype vue lors de la présentation ou à une éventuelle
+instance en production.
+
+1.3. Objectif général
+
+L’objectif général est de digitaliser et d’automatiser le processus de gestion des
+cotations commerciales de Trident Oil Services, en centralisant les informations et en
+facilitant la création, la production documentaire, l’envoi et le suivi des cotations.
+
+1.4. Objectifs spécifiques
+
+Les objectifs spécifiques formulés dans les documents du projet sont les suivants :
+
+- réduire les tâches manuelles et les ressaisies ;
+- standardiser la préparation des cotations ;
+- générer automatiquement un document PDF portant une référence ;
+- faciliter l’envoi des cotations aux clients par courrier électronique ;
+- suivre les états des cotations au cours de leur cycle de vie ;
+- centraliser l’historique des cotations et des actions ;
+- sécuriser l’accès à l’application selon les profils et les responsabilités ;
+- présenter une vision statistique de l’activité par tableau de bord.
+
+
+2. CONTEXTE DE L’ENTREPRISE ET PROBLÉMATIQUE
+
+2.1. Présentation de la structure d’accueil
+
+Trident Oil Services est présentée dans le support de stage comme une entreprise du
+secteur Oil & Gas exerçant des services pétroliers et des activités connexes à Abidjan.
+Le besoin étudié concerne un processus interne de nature commerciale : la préparation
+et l’administration des propositions adressées aux clients.
+
+Le présent rapport ne complète pas cette description par des données de taille, de
+chiffre d’affaires, d’effectifs ou d’organisation interne, car ces informations ne sont
+pas établies par les pièces vérifiées.
+
+2.2. Situation initiale
+
+La présentation du projet identifie plusieurs difficultés du fonctionnement antérieur :
+
+- la gestion des cotations repose sur des tâches manuelles ;
+- les informations sont conservées dans différents documents et sont difficiles à
+  centraliser ;
+- la préparation des cotations implique des saisies répétitives ;
+- la production de documents commerciaux présente un risque d’erreur ;
+- le suivi des statuts est difficile à assurer de manière uniforme ;
+- la recherche de l’historique exige une organisation et une automatisation accrues ;
+- la transmission au client requiert une intervention manuelle.
+
+Ces éléments décrivent les problèmes métier tels qu’ils sont formulés dans la
+présentation. Aucune mesure initiale du temps de traitement, du nombre d’erreurs, du
+volume de cotations ou du délai d’envoi n’est fournie. La situation de départ constitue
+donc un constat qualitatif et non un état de référence chiffré.
+
+2.3. Problématique
+
+La problématique retenue est la suivante :
+
+« Comment automatiser et centraliser le processus de création, de suivi et d’envoi des
+cotations commerciales tout en garantissant leur fiabilité et leur traçabilité ? »
+
+Elle comporte quatre enjeux interdépendants :
+
+1. Structurer les données client et les lignes de la cotation afin de limiter les
+   ressaisies et de calculer les montants de façon reproductible.
+2. Produire un document exploitable par l’entreprise à partir des données enregistrées.
+3. Donner aux utilisateurs une visibilité sur l’état et l’historique des cotations.
+4. Contrôler les opérations sensibles en fonction des rôles et conserver une trace des
+   actions pertinentes.
+
+2.4. Intérêt de la solution
+
+Une application métier centralisée peut fournir un point d’entrée commun aux profils
+autorisés, conserver les informations dans une base relationnelle et réduire le nombre
+de manipulations séparées nécessaires à la préparation d’une cotation. La référence
+générée, le PDF, les appels d’API et l’historique fournissent les composants nécessaires
+à un flux plus traçable.
+
+Ces apports constituent la finalité et les mécanismes prévus par la solution. En
+l’absence d’observations d’usage en entreprise et de mesures comparatives, ils ne sont
+pas assimilés à des gains de productivité ou à une réduction d’erreurs déjà démontrés.
+
+
+3. ANALYSE DES BESOINS ET SPÉCIFICATION FONCTIONNELLE
+
+3.1. Recueil du besoin
+
+Les informations métier de référence indiquent que le cahier des charges initial n’était
+pas formalisé et que le besoin a été présenté principalement de manière orale. Une phase
+de recueil et d’analyse a été engagée afin d’identifier le processus à digitaliser, les
+acteurs et les fonctionnalités attendues.
+
+Les éléments conservés permettent d’énoncer les besoins et le périmètre fonctionnel.
+Ils ne permettent cependant pas de reconstituer les dates des entretiens, la liste des
+personnes consultées, les arbitrages validés ni une approbation formelle de chaque
+exigence par l’entreprise. Les exigences ci-dessous sont donc celles documentées dans
+les sources disponibles.
+
+3.2. Acteurs et responsabilités fonctionnelles
+
+Le modèle applicatif distingue trois rôles. Les noms de rôle employés par l’API sont
+ADMIN, RESPONSABLE et COLLABORATEUR. Dans la présentation, ils correspondent
+approximativement à Administrateur, Manager et Employé/Commercial.
+
+Administrateur
+- gère les utilisateurs et leurs rôles ;
+- traite les demandes d’accès ;
+- consulte les cotations et les statistiques globales ;
+- dispose des opérations administratives protégées par le rôle ADMIN.
+
+Responsable (manager)
+- consulte le portefeuille global des cotations et le tableau de bord global ;
+- crée et modifie les cotations ;
+- peut effectuer les changements de statut permis par la règle métier ;
+- peut consulter les relances de paiement et déclencher les opérations prévues pour
+  les rôles responsable et administrateur.
+
+Collaborateur (employé/commercial)
+- crée des cotations et modifie celles auxquelles il a accès ;
+- consulte uniquement ses propres cotations ;
+- peut produire, télécharger et envoyer les documents de ses cotations, sous réserve
+  des conditions techniques requises ;
+- consulte un tableau de bord dont les données sont limitées à son périmètre ;
+- ne peut pas modifier directement un statut avec l’endpoint de changement de statut.
+
+3.3. Matrice de permissions observée dans l’API
+
+La matrice suivante décrit les règles visibles dans les routes et dépendances du
+backend. Elle prévaut sur les descriptions plus générales de la présentation.
+
+Opération                              ADMIN     RESPONSABLE     COLLABORATEUR
+Connexion / profil authentifié        Oui       Oui             Oui
+Gestion des utilisateurs              Oui       Non             Non
+Traitement des demandes d’accès       Oui       Non             Non
+Lister toutes les cotations           Oui       Oui             Non
+Lister ses propres cotations          Oui       Oui             Oui
+Créer une cotation                    Oui       Oui             Oui
+Modifier une cotation accessible      Oui       Oui             Oui*
+Supprimer une cotation                Oui       Non             Non
+Générer / télécharger un PDF          Oui**     Oui**           Oui**
+Envoyer une cotation par e-mail       Oui**     Oui**           Oui**
+Modifier un statut par endpoint       Oui       Oui             Non
+Tableau de bord global                Oui       Oui             Non
+Tableau de bord individuel            Selon rôle Non spécifique  Oui
+Lister les relances globales           Oui       Oui             Non
+Consulter les relances d’une cotation  Cond.     Cond.           Cond.
+Envoyer une relance de paiement        Oui       Oui             Non
+Santé des tâches et contrôle SMTP     Oui       Non             Non
+
+* Le contrôle d’accès aux données limite le collaborateur à ses propres cotations ;
+  le responsable et l’administrateur ont un périmètre global. La route de modification
+  vérifie l’accès à la cotation.
+** La route accepte les trois rôles, mais le contrôle d’accès aux cotations s’applique
+  aux enregistrements concernés. La génération PDF est également soumise à la
+  disponibilité effective de la bibliothèque et des paramètres nécessaires. L’envoi
+  requiert la configuration SMTP et l’adresse expéditrice.
+
+La présentation indique que l’administrateur et le manager peuvent modifier tous les
+devis et que le collaborateur gère ses propres devis. Le code confirme la vue globale
+pour les deux rôles de supervision et le périmètre personnel du collaborateur. Il
+restreint toutefois la suppression au seul administrateur, et limite le changement de
+statut aux rôles ADMIN et RESPONSABLE. La matrice ci-dessus reflète cette différence.
+
+La figure 1 synthétise les cas d’utilisation à partir des contrôles d’accès du backend.
+Les opérations d’historique, de PDF et de consultation des relances restent
+conditionnées à l’accès à la cotation concernée ; elles ne confèrent pas au
+collaborateur un accès global.
+
+Figure 1. Cas d’utilisation et permissions réelles des profils
+[[IMAGE:01_cas_utilisation.png]]
+
+3.4. Besoins fonctionnels
+
+BF-01 – Authentifier l’utilisateur
+L’application permet à un utilisateur disposant d’un compte actif de s’authentifier.
+L’API délivre un jeton d’accès JWT et permet de consulter le profil courant.
+
+BF-02 – Administrer les comptes et rôles
+L’administrateur peut créer, consulter, modifier et désactiver des utilisateurs. Le
+système distingue ADMIN, RESPONSABLE et COLLABORATEUR. Un flux de demande d’accès est
+également présent ; son traitement est réservé à l’administrateur.
+
+BF-03 – Créer une cotation
+Un utilisateur autorisé saisit les informations du client, les conditions de livraison
+et les articles. Une cotation doit comporter au moins un article. Elle reçoit un
+identifiant et une référence générée par le service métier.
+
+BF-04 – Modifier une cotation
+Un utilisateur autorisé peut modifier les données d’une cotation accessible et ses
+articles. Les montants des lignes et le total sont recalculés par le backend à partir
+des valeurs décimales enregistrées.
+
+BF-05 – Consulter, filtrer et paginer
+L’API permet de consulter les cotations avec filtres et pagination. Les filtres visibles
+portent notamment sur la référence, le client, le statut et les dates. Le périmètre des
+résultats dépend du rôle.
+
+BF-06 – Générer et télécharger un PDF
+Le backend rend un gabarit HTML contenant les informations de l’entreprise, du client,
+de la cotation, des articles, du montant et des conditions, puis produit un fichier PDF.
+Le PDF peut ensuite être téléchargé.
+
+BF-07 – Envoyer la cotation
+L’action d’envoi prépare le PDF et tente de le transmettre à l’adresse du client au
+moyen d’un serveur SMTP configuré. Le statut ne passe à ENVOYEE qu’après confirmation
+de l’envoi selon la logique métier.
+
+BF-08 – Suivre les statuts et l’historique
+Le système conserve le statut de chaque cotation et expose un historique. Les actions
+importantes sont inscrites dans la table d’audit.
+
+BF-09 – Visualiser l’activité
+Le tableau de bord fournit des indicateurs et des données graphiques issus des
+cotations. Les données d’un collaborateur sont restreintes à ses propres enregistrements.
+
+BF-10 – Gérer les relances et l’expiration
+Le backend contient des routes et services de relance et une tâche d’expiration des
+cotations. L’expiration automatique cible les cotations ENVOYEE dont la date de validité
+est dépassée. Le déploiement Render prévu lance une tâche d’expiration horaire ; le
+fonctionnement réel de cette tâche n’est pas prouvé par les seuls fichiers de
+configuration.
+
+3.5. Règles métier et cycle de vie
+
+Les statuts définis dans le modèle sont :
+
+BROUILLON : cotation créée mais pas encore envoyée ;
+ENVOYEE : envoi par courrier électronique confirmé ;
+ACCEPTEE : acceptation commerciale explicite ;
+REFUSEE : proposition rejetée ou annulée après envoi ;
+EXPIREE : cotation arrivée au-delà de sa période de validité.
+
+Les transitions métier autorisées sont :
+
+BROUILLON ── envoi PDF et e-mail confirmé ──> ENVOYEE
+ENVOYEE ── décision commerciale ────────────> ACCEPTEE
+ENVOYEE ── refus / annulation ───────────────> REFUSEE
+ENVOYEE ── validité dépassée ────────────────> EXPIREE
+
+ACCEPTEE, REFUSEE et EXPIREE sont des états terminaux : aucune transition ultérieure
+n’est définie dans le service de statut.
+
+Le passage à ENVOYEE n’est pas un changement administratif arbitraire : le service
+vérifie l’existence du PDF et une confirmation d’envoi. Dans le parcours API, cette
+transition est déclenchée à l’issue de l’action d’envoi. L’endpoint de changement de
+statut interdit de forcer directement ENVOYEE ou EXPIREE. L’expiration est prise en
+charge par la tâche planifiée. Le statut ACCEPTEE est le seul qui représente
+l’acceptation commerciale ; la création ou l’envoi ne constituent pas une acceptation.
+
+Figure 2. États et transitions autorisées d’une cotation
+[[IMAGE:05_etats_cotation.png]]
+
+3.6. Scénario nominal et exceptions
+
+Scénario nominal :
+1. L’utilisateur s’authentifie.
+2. Il saisit les informations du client, la date de validité, les conditions de
+   livraison et au moins un article.
+3. L’API valide les données, génère une référence, calcule les montants et persiste
+   la cotation ainsi que ses articles.
+4. L’utilisateur déclenche la génération du document PDF.
+5. Il envoie le document à l’adresse électronique du client.
+6. Après confirmation de l’envoi, le statut devient ENVOYEE.
+7. Le responsable ou l’administrateur enregistre la décision commerciale autorisée,
+   ou le traitement d’expiration met à jour le statut lorsque la validité est dépassée.
+8. L’historique et les indicateurs sont consultables selon les permissions.
+
+La figure 3 détaille les échanges entre l’utilisateur, le frontend, l’API, la base,
+le service PDF, le serveur SMTP et le traitement planifié. Les branches SMTP représentent
+explicitement le cas de configuration absente ou d’échec, dans lequel la cotation ne
+doit pas devenir ENVOYEE.
+
+Figure 3. Séquence du cycle de vie d’une cotation
+[[IMAGE:04_sequence_cycle_devis.png]]
+
+Exceptions explicitement traitées dans le code ou les tests :
+- absence d’authentification ou jeton invalide : refus HTTP ;
+- utilisateur inactif ou version de jeton révoquée : refus d’accès ;
+- accès à la cotation d’un autre collaborateur : refus ;
+- champ requis absent ou donnée invalide : rejet de validation ;
+- transition de statut interdite : erreur métier ;
+- absence de configuration SMTP : erreur explicite avant envoi ;
+- échec d’envoi : erreur de serveur, sans passage au statut ENVOYEE ;
+- génération PDF impossible lorsque WeasyPrint ou ses dépendances système ne sont pas
+  disponibles : erreur d’exécution ;
+- cotation sans article : rejet métier.
+
+3.7. Besoins non démontrés comme implémentés ou validés
+
+Les pièces ne démontrent pas une fonctionnalité de mot de passe oublié achevée,
+l’acceptation formelle des cotations par le client depuis un portail externe, la
+signature électronique, une intégration à un ERP ou un CRM, ni un service d’assistance
+technique finalisé. La présentation range le mot de passe oublié, les paramètres, la
+confidentialité, les mentions légales, le support et l’aide parmi les suites du projet.
+Ces éléments ne sont donc pas présentés ici comme livrés.
+
+3.8. Exigences non fonctionnelles vérifiables
+
+Les exigences non fonctionnelles suivantes sont dérivées des mécanismes présents dans
+le dépôt. Elles décrivent des propriétés attendues ou des mesures techniques codées ;
+elles ne constituent pas une certification de conformité ni une mesure de performance.
+
+ENF-01 – Contrôle d’accès côté serveur : chaque opération protégée doit être contrôlée
+par l’API, et le collaborateur ne doit accéder qu’à ses propres cotations.
+
+ENF-02 – Protection des identifiants : les mots de passe persistés sont hachés ; les
+jetons ont une durée de validité et leur version permet l’invalidation.
+
+ENF-03 – Externalisation des secrets : clé de signature, identifiants SMTP et
+informations d’entreprise sont fournis par l’environnement de déploiement. En
+production, les contrôles de configuration exigent notamment une clé d’au moins
+32 caractères et des origines HTTPS valides.
+
+ENF-04 – Traçabilité : les opérations métier pertinentes et l’exécution des tâches
+doivent produire des entrées horodatées dans la base. La rétention et l’archivage
+externe ne sont pas définis.
+
+ENF-05 – Intégrité des montants : les montants utilisent des décimaux et les calculs
+sont arrondis à deux décimales selon HALF_UP.
+
+ENF-06 – Interopérabilité : le frontend communique avec une API HTTP versionnée qui
+retourne des représentations JSON et des codes d’erreur HTTP.
+
+ENF-07 – Exploitabilité : l’application expose un contrôle de santé de la base et
+prévoit des migrations de schéma. Les sauvegardes, objectifs de disponibilité,
+restauration et niveaux de service ne sont pas prouvés.
+
+Aucun objectif mesuré de latence, de charge, de disponibilité, de capacité ou de
+temps de réponse n’est défini dans les éléments vérifiés ; aucune performance chiffrée
+n’est donc attribuée au système.
+
+
+4. CONCEPTION ET ARCHITECTURE DE LA SOLUTION
+
+4.1. Architecture logique
+
+Le système est organisé en trois couches principales :
+
+┌───────────────────────────────────────────────┐
+│ Utilisateur : administrateur, responsable,    │
+│ collaborateur                                 │
+└───────────────────────┬───────────────────────┘
+                        │ Interface web
+┌───────────────────────▼───────────────────────┐
+│ Frontend React + TypeScript + Vite            │
+│ Formulaires, vues, actions, appels HTTP/API    │
+└───────────────────────┬───────────────────────┘
+                        │ JSON / HTTPS en cible
+┌───────────────────────▼───────────────────────┐
+│ API Python / FastAPI                           │
+│ Authentification, règles métier, validation,  │
+│ permissions, services de cotation et PDF      │
+└───────┬───────────────┬───────────────┬───────┘
+        │               │               │
+┌───────▼──────┐ ┌──────▼──────┐ ┌──────▼────────────┐
+│ PostgreSQL   │ │ Stockage PDF│ │ SMTP              │
+│ SQLAlchemy   │ │ disque prévu│ │ e-mails sortants  │
+│ Alembic      │ │ persistant  │ │                  │
+└──────────────┘ └─────────────┘ └───────────────────┘
+                        │
+               ┌────────▼─────────┐
+               │ Tâche d’expiration│
+               │ périodique prévue │
+               └──────────────────┘
+
+Le frontend consomme les routes `/api/v1/`. Le backend applique les règles d’accès,
+interagit avec la base de données et délègue certaines opérations à des services :
+calcul, génération de référence, rendu PDF, courrier électronique, historique,
+statistiques et expiration.
+
+La figure 4 représente les composants techniques et les échanges identifiés. La
+connexion SMTP et le stockage persistant sont des dépendances configurées ; le
+déploiement Render indiqué par la figure 6 reste déclaré et non certifié comme actif.
+
+Figure 4. Architecture applicative et intégrations
+[[IMAGE:02_architecture.png]]
+
+4.2. Technologies identifiées
+
+Couche / fonction                 Technologie constatée
+Frontend                          React 19, TypeScript, Vite
+Backend / API                     Python, FastAPI, Uvicorn
+Validation et schémas             Pydantic
+Accès aux données                 SQLAlchemy 2
+Migrations de schéma              Alembic
+Base de développement             SQLite configurée par défaut
+Base cible de production          PostgreSQL, déclarée dans Render
+Authentification                  JWT via python-jose
+Hachage des mots de passe         Passlib / PBKDF2-SHA256
+Rendu de document                 Jinja2 et gabarit HTML
+Génération PDF dans le code       WeasyPrint
+Courrier électronique             smtplib / EmailMessage
+Tâches planifiées                 code Celery et commande d’expiration
+Hébergement visé                  Render, via Blueprint et Docker
+Tests backend                     pytest et FastAPI TestClient
+
+Le manifeste frontend nomme React, TypeScript et Vite. Le backend utilise FastAPI et
+SQLAlchemy. PostgreSQL est indiqué comme base de production, tandis que les tests
+locaux utilisent SQLite. Cette différence permet de travailler localement sans le
+service de production, mais implique que les tests SQLite ne reproduisent pas
+nécessairement tous les comportements propres à PostgreSQL.
+
+Les choix sont cohérents avec le périmètre observé : React et TypeScript séparent
+l’interface des règles métier ; FastAPI fournit des routes HTTP et une validation
+typée ; SQLAlchemy permet de mapper le domaine vers une base relationnelle ; Alembic
+versionne le schéma ; Jinja2 réutilise un gabarit de document pour le rendu PDF.
+L’architecture en services isole notamment calcul, statut, courriel et génération
+documentaire. Ces justifications portent sur les mécanismes du projet ; aucune
+comparaison expérimentale avec d’autres frameworks ou mesure de coût de maintenance
+n’a été fournie.
+
+4.3. Modèle de données
+
+Le modèle relationnel observé comprend les entités principales suivantes :
+
+USER
+- id : identifiant ;
+- email : adresse unique de connexion ;
+- hashed_password : empreinte du mot de passe ;
+- full_name et avatar_url ;
+- role : ADMIN, RESPONSABLE ou COLLABORATEUR ;
+- is_active, token_version, created_at et updated_at.
+
+QUOTATION
+- id et référence unique ;
+- client_name, client_email, client_address et client_reference ;
+- creation_date, validity_date, delivery_duration ;
+- incoterm et special_conditions ;
+- status : BROUILLON, ENVOYEE, ACCEPTEE, REFUSEE ou EXPIREE ;
+- total_amount, is_paid, created_by, created_at et updated_at.
+
+ARTICLE
+- id, désignation, quantité, unité, prix unitaire et total de ligne ;
+- quotation_id, clé étrangère vers la cotation.
+
+AUDIT_LOG
+- id, utilisateur éventuel, action, type et identifiant de l’entité ;
+- détails structurés en JSON et horodatage.
+
+ACCESS_REQUEST
+- demandeur, adresse électronique, rôle souhaité, empreinte du mot de passe saisie
+  pour la demande, état de traitement et date de création.
+
+PAYMENT_REMINDER
+- cotation associée, date d’échéance, date d’envoi éventuelle et état de relance.
+
+REFERENCE_COUNTER
+- nom du compteur et valeur, pour soutenir la génération des références.
+
+Relations principales :
+
+USER 1 ──────── 0..N QUOTATION    (créateur)
+QUOTATION 1 ─── 0..N ARTICLE      (lignes persistées)
+USER 1 ──────── 0..N AUDIT_LOG    (auteur éventuel)
+QUOTATION 1 ─── 0..N PAYMENT_REMINDER
+
+Les demandes d’accès sont enregistrées avant la création éventuelle d’un compte.
+L’historique est réalisé par une table d’audit générique plutôt que par une copie
+complète des versions de chaque cotation. Les tables et champs indiqués correspondent
+aux modèles présents ; ils ne constituent pas une preuve d’un schéma déployé à jour.
+La base ne déclare pas de contrainte imposant au moins un article ; cette règle est
+appliquée par les routes de création et de suppression. La figure 5 présente les
+attributs principaux, les clés et les relations des modèles. La relation
+`AccessRequest`–`User` est indirecte par l’adresse électronique au traitement de la
+demande, et `AuditLog.entity_id` est un identifiant générique sans clé étrangère vers
+toutes les tables métier.
+
+Figure 5. Modèle de données dérivé des modèles SQLAlchemy et du schéma Alembic
+[[IMAGE:03_modele_donnees.png]]
+
+4.4. Conception du calcul des montants
+
+Les quantités et prix sont représentés au moyen de types décimaux dans le modèle. Le
+service de calcul multiplie la quantité par le prix unitaire et arrondit le montant de
+ligne à deux décimales, avec l’arrondi HALF_UP. Le total de la cotation est obtenu en
+sommant les montants de ligne, puis arrondi à deux décimales.
+
+Les éléments contrôlés n’attestent pas de champs dédiés à la TVA, aux remises, à
+plusieurs devises ou à des conditions de paiement structurées. Le modèle comporte
+notamment un montant total, un indicateur de paiement, des conditions spéciales et une
+durée de livraison. Les devis sont formatés en FCFA par le service PDF. Toute exigence
+fiscale ou commerciale supplémentaire doit donc être vérifiée auprès de l’entreprise
+avant de l’affirmer comme couverte.
+
+4.5. Conception de la référence et du PDF
+
+La cotation reçoit une référence générée par un service dédié à partir de la date de
+création et d’un mécanisme de compteur. Le test de parcours PDF attend une forme du
+type `NNN#JJ-MM-AAAA`. Le PDF reprend la référence dans le nom du fichier, les données
+client, les articles, les dates, les indications commerciales, le logo et les
+informations d’entreprise configurées.
+
+La note du professeur constate que le devis produit constitue une preuve de
+fonctionnement, mais que sa mise en page reste moins aboutie que le modèle de référence.
+La présentation identifie elle-même la reproduction fidèle du PDF de l’entreprise comme
+une difficulté en cours de résolution. Il s’agit donc d’une fonction présente, avec une
+réserve de fidélité graphique à conserver.
+
+4.6. Diagrammes et modèle de données
+
+La présentation comporte un diagramme de cas d’utilisation. Le fichier `mcd.png`
+existant a été identifié dans le dossier de référence, mais l’audit antérieur a relevé
+qu’il représente également les données/cas d’usage du système et ne doit pas être
+présenté sans vérification comme un modèle conceptuel de données relationnel complet.
+Le modèle textuel ci-dessus est établi à partir des modèles SQLAlchemy. Il ne prétend
+pas remplacer une notation UML formelle validée par l’entreprise.
+
+
+5. RÉALISATION TECHNIQUE
+
+5.1. Structure applicative
+
+Le backend est organisé autour de modules de routes, de modèles persistés, de schémas
+de validation, de services métier et de tâches planifiées. Les routes exposent des
+opérations HTTP sous `/api/v1/`. Les services séparent plusieurs responsabilités :
+
+- calcul des lignes et des totaux ;
+- génération de références ;
+- rendu et génération des PDF ;
+- envoi des cotations et des relances ;
+- transition de statut ;
+- calcul des statistiques de tableau de bord ;
+- expiration périodique des cotations arrivées à échéance.
+
+Le frontend est un projet React/TypeScript construit avec Vite. Le backend documente
+une API consultable via Swagger à `/docs`. Le fichier Render relie l’URL publique de
+l’API à la variable de configuration du frontend.
+
+5.2. Authentification et gestion des comptes
+
+L’API expose la connexion, la consultation du profil authentifié, la déconnexion et
+le changement de mot de passe. Lors de la connexion, le mot de passe soumis est comparé
+à son empreinte. Le jeton JWT contient un sujet utilisateur, un rôle et une version de
+jeton. Les routes protégées retrouvent le compte, vérifient son état actif et comparent
+la version du jeton à celle stockée.
+
+La version de jeton est incrémentée à la déconnexion et lors du changement du mot de
+passe, ce qui invalide les jetons existants selon le mécanisme implémenté. Le mot de
+passe est haché avec PBKDF2-SHA256 et le paramétrage actuellement visible utilise
+600 000 itérations. Le changement de mot de passe vérifie l’ancien mot de passe, impose
+une longueur minimale de 12 caractères et exige une confirmation concordante.
+
+5.3. Gestion des cotations
+
+Les routes permettent de créer, lister, consulter, modifier et supprimer des cotations,
+ainsi que de consulter leur historique et de modifier certains statuts. Les listes
+acceptent des filtres et des paramètres de pagination. La création rejette une
+cotation sans article. La modification recalcule le total à partir des articles
+conservés.
+
+L’accès aux cotations est différencié. Les comptes de rôle RESPONSABLE et ADMIN peuvent
+consulter les données globales ; un COLLABORATEUR est limité à celles dont il est le
+créateur. La suppression est réservée à ADMIN. Le périmètre exact de la modification,
+de la production de PDF, du téléchargement et de l’envoi dépend à la fois du contrôle
+de rôle et du contrôle d’accès à la cotation.
+
+5.4. Documents PDF
+
+Le gabarit de devis est un document HTML rendu au moyen de Jinja2. Les informations de
+l’entreprise (nom, adresse, contacts, coordonnées bancaires et logo) sont configurables
+et intégrées au document. Le gabarit formate les montants en FCFA, peut produire leur
+libellé en lettres, présente les lignes et les informations de la cotation.
+
+Point technique important : dans la version du service PDF examinée, `generate_pdf`
+exige que WeasyPrint soit importable. Si cette bibliothèque ou ses dépendances natives
+ne sont pas disponibles, le code lève une RuntimeError. Bien qu’un script et un PDF de
+test ReportLab existent et que certains documents parlent d’un « fallback ReportLab »,
+la fonction `generate_pdf` observée ne bascule pas vers ReportLab. Le rapport ne
+présente donc pas ce fallback comme une capacité effective du chemin de production.
+Le rendu WeasyPrint a été vérifié localement sur des données synthétiques et le parcours
+runtime a également créé puis téléchargé un PDF valide. Cette preuve locale ne vaut
+pas validation de toutes les images système Linux ni de l’environnement de production.
+
+5.5. Envoi de courriels
+
+Le service construit un message destiné au client et ajoute le PDF en pièce jointe.
+Selon le port configuré, la connexion utilise SMTP avec STARTTLS sur le port 587 ou
+SMTP sur TLS direct sur le port 465. L’authentification SMTP est utilisée si le nom
+d’utilisateur et le mot de passe sont renseignés.
+
+La route d’envoi vérifie explicitement que le serveur SMTP et l’expéditeur sont
+configurés. Si l’envoi échoue, elle renvoie une erreur et ne marque pas la cotation
+ENVOYEE en l’absence de confirmation. La configuration SMTP a été remplacée selon
+l’information communiquée par le porteur du projet ; ses valeurs n’ont pas été lues
+et aucun envoi réel n’a été tenté dans cette vérification. La trace locale
+`debug_out.txt` rapporte un ancien HTTP 400 « SMTP host is not configured ». Aucune
+preuve d’envoi SMTP ou de réception avec la configuration actuelle n’est disponible.
+
+5.6. Historique et tableaux de bord
+
+Les opérations principales écrivent des événements d’audit associés à l’utilisateur
+éventuel, à l’entité, à son identifiant, à une action, à des détails JSON et à une date.
+Les routes d’historique permettent de consulter les actions relatives à une cotation
+et à ses articles, sous réserve des droits d’accès.
+
+Le tableau de bord récupère ses données depuis les cotations. Les routes de résumé et
+de graphiques acceptent notamment une vue mensuelle, par statut ou par période. Le
+collaborateur reçoit des données limitées à son compte ; les profils de supervision
+disposent d’une vue globale. Le taux de conversion documenté dans `STATUTS_QUOTATIONS.txt`
+est le rapport entre le nombre de cotations ACCEPTEE et le nombre de cotations ENVOYEE ;
+il est défini à zéro lorsqu’aucune cotation n’est envoyée. Ces indicateurs décrivent
+l’activité enregistrée et ne constituent pas une intelligence artificielle.
+
+5.7. Gestion des demandes, relances et tâches
+
+Le backend expose un flux de demandes d’accès avec les états EN_ATTENTE, ACCEPTEE et
+REFUSEE. Les demandes sont traitées par l’administrateur et stockent une empreinte du
+mot de passe plutôt que le mot de passe en clair.
+
+Le modèle de relance comprend une date d’échéance, une date d’envoi et un état. Des
+routes listent les relances et permettent l’envoi manuel dans le périmètre des rôles
+autorisés. Le traitement quotidien automatique des relances n’est pas déclaré dans la
+configuration Render actuelle. La tâche planifiée configurée cible l’expiration des
+cotations, pas la relance automatique des paiements.
+
+
+6. SÉCURITÉ, FIABILITÉ ET TRAÇABILITÉ
+
+6.1. Contrôle d’accès
+
+Les routes utilisent des dépendances d’authentification et de rôle. Le backend vérifie
+le jeton bearer, l’existence et l’état actif du compte, ainsi que la version du jeton.
+Les droits sont appliqués côté API et ne reposent donc pas uniquement sur le masquage
+d’éléments dans l’interface.
+
+La règle de cloisonnement des cotations distingue les utilisateurs de supervision du
+collaborateur. Le collaborateur ne peut pas consulter ou modifier une cotation créée
+par un autre compte. Des tests de sécurité rédigés couvrent notamment la lecture d’une
+cotation étrangère, son historique, son PDF, ses relances et ses articles.
+
+6.2. Protection des identifiants et des secrets
+
+Les mots de passe de compte sont persistés sous forme hachée. Les réponses de gestion
+des utilisateurs ne doivent pas exposer le hachage. La configuration de production
+refuse une clé secrète trop courte, exige une base PostgreSQL et impose des origines
+HTTPS valides. Les variables SMTP et les informations d’entreprise sont prévues dans
+l’environnement Render plutôt que dans le code.
+
+La présence de variables configurables et de contrôles de démarrage est une mesure de
+conception ; elle ne prouve pas que l’instance Render dispose de valeurs correctement
+renseignées. Aucun secret de déploiement n’est reproduit dans ce rapport.
+
+6.3. Journalisation et traçabilité
+
+Le modèle d’audit permet d’enregistrer les créations, modifications, suppressions,
+changements de statut, envois, générations PDF et opérations système. Les événements
+contiennent un horodatage et peuvent inclure des détails métier. Le service d’expiration
+écrit également un événement d’exécution et un compte du nombre de cotations traitées.
+
+Une journalisation d’application n’équivaut pas à une politique complète de conservation,
+à une supervision centralisée, ni à un système inviolable. Aucune durée de rétention,
+politique d’archivage externe ou procédure de vérification périodique des journaux
+n’est établie par les sources.
+
+6.4. Gestion des erreurs et continuité de service
+
+Les erreurs de validation sont traduites en réponses HTTP appropriées. Les erreurs
+d’authentification et d’autorisation sont distinguées des erreurs métier. La
+configuration SMTP absente est signalée explicitement ; le contrôle `/health` vérifie
+la connexion à la base et peut répondre HTTP 503. Un contrôle administratif de
+connectivité SMTP et une consultation de l’état des tâches sont également présents.
+
+Les opérations d’envoi, de rendu PDF, de connexion à PostgreSQL et de tâches dépendent
+de services externes ou de bibliothèques natives. Leur disponibilité n’a pas été
+mesurée sur un environnement exploité. Aucun plan de continuité de service, objectif
+de reprise ou procédure complète de restauration applicative n’est documenté dans les
+sources disponibles.
+
+6.5. Sauvegardes et protection des données
+
+Le stockage persistant des PDF prévu sur Render ne constitue pas une sauvegarde. Le
+guide de déploiement rappelle que les sauvegardes PostgreSQL dépendent du plan Render
+et recommande un export chiffré indépendant ainsi qu’un test de restauration. La
+présence d’une politique de sauvegarde effectivement activée, sa rétention et un essai
+de restauration ne sont pas démontrés.
+
+Les données métier peuvent contenir des informations sur les clients, leurs adresses,
+leurs courriels, leurs références commerciales et les conditions des cotations. Le
+rapport ne peut pas conclure à la conformité à une réglementation spécifique faute
+d’inventaire des traitements, de durées de conservation, de base juridique ou de
+validation juridique documentée.
+
+6.6. Risques techniques identifiés
+
+Risque                         État constaté                              Effet potentiel
+SMTP non vérifié                Ancienne trace HTTP 400; configuration      Réception d’un message
+                                actuelle déclarée remplacée par le porteur   non démontrée
+WeasyPrint                      PDF local et parcours API runtime réussis   Dépendances/production
+                                                                            non validées hors local
+Fidélité du PDF                 Difficulté reconnue dans la présentation     Écart graphique au modèle
+Render non confirmé             Blueprint seulement                         Absence de preuve de service
+Sauvegarde/restauration         Procédure non prouvée                       Risque de perte de données
+Reprise de test.db              Aucune migration de données déclarée         Données locales non transférées
+Config documentation            README et guide distinguent désormais le     La planification réelle
+                                Cron déclaré des tâches Celery               reste à valider après
+                                                                            déploiement
+
+
+7. TESTS ET QUALITÉ LOGICIELLE
+
+7.1. Stratégie de test et environnement
+
+Le dépôt contient des tests pytest pour les calculs, l’authentification, les rôles,
+les cotations, les références, les demandes d’accès, la sécurité, la génération PDF,
+le tableau de bord, les notifications et l’expiration planifiée. La suite backend
+utilise SQLite temporaire pour ses tests. Les parcours runtime s’exécutent contre une
+API locale démarrée séparément, une base dédiée et des identifiants synthétiques.
+Aucune base de données de travail ou de production n’a été utilisée.
+
+7.2. Résultats exécutés le 13 octobre 2026
+
+Domaine                           Commande / parcours                      Réussis  Échoués  Ignorés
+Suite backend complète            `python -m pytest -q tests`              32       0        3
+Parcours runtime                  `python -m pytest -vv --tb=no -rN         3        0        0
+                                  tests/runtime_validation`
+Lint frontend                     `npm run lint`                           Succès   0        —
+Build frontend                    `npm run build`                          Succès   0        —
+
+La suite backend s’est terminée avec le code retour 0 et 54 avertissements, dont
+des avertissements de dépréciation. Les trois cas ignorés lors de cette exécution
+sont ceux des parcours runtime lorsque `RUNTIME_API_URL` n’est pas défini ; ils ne
+sont pas comptés comme des échecs. Ces trois parcours ont ensuite été exécutés
+séparément contre l’API locale isolée et ont tous réussi, code retour 0 :
+
+- `test_login_profile_and_logout_invalidate_session` : connexion, profil, déconnexion
+  et rejet du jeton révoqué ;
+- `test_dashboard_reflects_persisted_quotation_and_cleanup` : persistance, résumé,
+  graphique, suppression et vérification de l’absence de la cotation ;
+- `test_create_persist_generate_and_download_current_pdf` : création, relecture,
+  contrôle du total, génération et téléchargement d’un PDF valide.
+
+Le parcours PDF vérifie les données synthétiques attendues, la signature `%PDF-`,
+le type de contenu et le nom de fichier. Il ne vérifie pas la fidélité graphique au
+modèle officiel ni le rendu dans un environnement Linux ou en production. Le
+répertoire temporaire et la base SQLite dédiée ont isolé les données des tests.
+La preuve visuelle de la sortie pytest est conservée dans
+`REFERENCE/figures/07_runtime_tests_terminal_capture.png`. Il s’agit d’une capture
+d’écran réelle de la fenêtre Windows Terminal montrant les résultats et les compteurs
+de la commande ; elle a été contrôlée après sa création.
+
+7.3. Traces antérieures et portée des résultats
+
+Le fichier local `Backend/debug_out.txt` conserve un essai antérieur de connexion,
+création et modification avec réponses HTTP 200, ainsi qu’une réponse HTTP 400 à
+l’envoi car `SMTP_HOST` n’était alors pas configuré. Cette trace décrit l’ancien
+état d’essai. La configuration actuelle est déclarée remplacée selon le porteur du
+projet, mais ses valeurs n’ont pas été lues et aucun message n’a été envoyé au cours
+de la vérification présente. Aucun accusé de réception ne prouve la livraison SMTP.
+
+Les tests automatisés de notification utilisent des mocks. Ils vérifient le contenu
+construit, les conditions de rappel et les réactions aux échecs simulés ; ils ne
+valident pas une connexion réelle, TLS, l’authentification SMTP ou la réception.
+
+7.4. Anomalies, corrections et limites de validation
+
+Les documents techniques consignent plusieurs corrections de configuration : retrait
+de valeurs par défaut sensibles pour SECRET_KEY et MAIL_FROM, ajout des variables
+COMPANY_* dans l’exemple d’environnement, vérification explicite de la configuration
+SMTP avant envoi et amélioration du message retourné lorsque cette configuration
+manque. Ces corrections sont décrites dans `Backend/VERIFICATION_CDC_FINALE.md`.
+
+La génération locale du PDF a réussi sur un jeu de données synthétiques et le parcours
+runtime a validé la création, la persistance, la génération et le téléchargement. Le
+service principal exige WeasyPrint et ne bascule pas automatiquement vers ReportLab ;
+les scripts ReportLab présents sont distincts. La compatibilité de toutes les
+dépendances natives sur Linux/Render et la fidélité au gabarit commercial restent à
+valider séparément.
+
+Le lint et le build frontend ont réussi après correction des anomalies identifiées
+dans `Frontend/src/App.tsx`. Aucun test SMTP réel, déploiement public, sauvegarde ou
+restauration n’a été exécuté. Les tests locaux ne valent pas recette de l’entreprise.
+Les résultats ci-dessus rapportent exactement les commandes exécutées et distinguent
+les parcours runtime de la suite backend générale.
+
+7.5. Cas de test fonctionnels de référence
+
+Les critères de test pertinents déductibles des routes et des tests présents sont :
+
+- un utilisateur actif peut se connecter et consulter son profil ;
+- un jeton absent, expiré ou révoqué ne donne pas accès aux routes protégées ;
+- le collaborateur ne peut consulter les cotations d’un autre utilisateur ;
+- une cotation doit comporter au moins un article ;
+- les lignes et le total respectent l’arrondi monétaire défini ;
+- les champs requis sont validés avant persistance ;
+- une transition non autorisée est rejetée ;
+- une cotation ne devient ENVOYEE qu’après PDF disponible et envoi confirmé ;
+- le PDF téléchargé porte le type de contenu PDF et les données attendues ;
+- une cotation arrivée à échéance ne peut être expirée que par la transition prévue ;
+- les réponses utilisateurs ne contiennent pas le hachage de mot de passe.
+
+Ces critères décrivent les comportements attendus et les assertions des tests présents.
+Les trois parcours runtime listés ci-dessus ont réussi localement ; les autres tests
+ne doivent être présentés comme exécutés que dans la limite de la suite backend dont
+les résultats sont consignés à la section 7.2.
+
+
+8. RÉSULTATS ET ÉVALUATION DE LA TRANSFORMATION
+
+8.1. Résultats fonctionnels observables
+
+L’état du code montre un périmètre applicatif structuré comprenant les comptes et
+rôles, les demandes d’accès, la création et la modification des cotations, les articles,
+le calcul des montants, les références, la génération et le téléchargement PDF,
+l’envoi par e-mail, les statuts, l’historique, le tableau de bord, les relances et
+l’expiration planifiée.
+
+La note d’appréciation décrit favorablement la pertinence du sujet et l’avancement
+fonctionnel ; elle indique que le prototype couvre le cœur fonctionnel et qu’un devis
+généré constitue une preuve de fonctionnement. Elle précise toutefois que la mise en
+page du devis reste moins aboutie que le modèle de l’entreprise et que le niveau
+assistant-ingénieur ne pourra être pleinement établi qu’avec des preuves
+complémentaires portant notamment sur architecture, sécurité, tests, déploiement,
+pilotage et résultats mesurés.
+
+Les preuves disponibles conduisent à des conclusions différenciées :
+
+Fonction implémentée dans le code : oui, pour les capacités listées dans le présent
+rapport.
+
+Test automatisé correspondant : la suite backend exécutée compte 32 tests réussis,
+0 échoué et 3 ignorés ; trois parcours runtime distincts comptent 3 réussis,
+0 échoué et 0 ignoré. Le lint et le build frontend ont également réussi.
+
+Trace d’essai local : oui, pour login, création et modification avec réponses 200 ;
+les parcours runtime locaux confirment en plus l’authentification, le tableau de bord,
+la persistance et le cycle PDF. L’ancienne trace SMTP HTTP 400 ne concerne pas la
+configuration déclarée remplacée ; aucune réception récente n’est prouvée.
+
+PDF : le parcours runtime a généré et téléchargé un PDF depuis la version locale
+examinée. Cela ne certifie ni le rendu sur l’image Linux prévue ni la fidélité complète
+au modèle de l’entreprise.
+
+Déploiement Render : configuration décrite et déclarée dans le dépôt ; exploitation
+publique effective non démontrée.
+
+8.2. Évaluation au regard des indicateurs demandés
+
+Indicateur demandé                 Information disponible                 Conclusion
+Temps de préparation avant/après   Aucune mesure comparative              Non quantifiable
+Nombre de saisies manuelles        Aucun comptage de référence              Réduction non mesurée
+Erreurs de préparation             Aucun registre comparatif                Réduction non mesurée
+Délai entre création et envoi      Aucun jeu de mesures horodatées           Non mesuré
+Recherche dans l’historique        Fonction d’historique dans le code        Capacité présente, gain
+                                                                           d’usage non mesuré
+Taux d’acceptation                 Calcul dashboard documenté                Indicateur applicatif ;
+                                                                           aucune valeur de résultat
+                                                                           fournie
+Satisfaction des utilisateurs     Aucun questionnaire ou retour formel      Non évaluée
+Validation du maître de stage      Aucun procès-verbal de recette fourni     Non établie
+
+La présence d’un taux de conversion dans le tableau de bord ne remplace pas une
+évaluation de l’effet du projet. Pour établir les gains, il faudrait un protocole
+comparant des cotations de complexité comparable avant et après l’usage de la solution,
+avec une méthode de chronométrage, un décompte des corrections, le délai d’envoi et un
+retour utilisateur. Aucun résultat de ce type n’est inventé dans ce rapport.
+
+8.3. Contribution au référentiel de compétences
+
+C1 – Conception et développement de systèmes numériques
+Le projet traduit un processus commercial en application web articulée autour d’un
+frontend, d’une API, d’une base relationnelle, de modèles métier, d’un contrôle d’accès
+et de services de génération documentaire. Les technologies, les entités et les
+principaux flux sont décrits à partir des sources. La formalisation initiale du besoin,
+la validation formelle du modèle et la preuve d’une version livrée unique restent
+partiellement documentées.
+
+C2 – Intelligence artificielle et science des données
+Aucune intelligence artificielle n’est revendiquée. Le tableau de bord calcule des
+indicateurs descriptifs sur des enregistrements en base ; aucun modèle prédictif,
+moteur de recommandation ou traitement intelligent n’est démontré. Cette distinction
+respecte explicitement la note pédagogique.
+
+C3 – Sécurisation, fiabilité et traçabilité
+Le code comporte authentification JWT, hachage de mot de passe, contrôle par rôle,
+filtrage d’accès aux cotations, invalidation de jetons et journaux d’audit. Des tests
+de sécurité sont présents. Les sauvegardes, la restauration, la disponibilité en
+production, la rétention des journaux et la validation de bout en bout restent non
+démontrées.
+
+C4 – Transformation numérique
+La solution centralise et automatise plusieurs étapes du processus décrit. Le bénéfice
+est cohérent avec l’objectif métier mais demeure qualitatif, car aucune mesure
+avant/après ni enquête utilisateur n’a été fournie.
+
+C5 – Pilotage d’un projet technique
+Le périmètre, les éléments techniques, les dépendances et les difficultés sont
+identifiables dans le dépôt et les documents. En revanche, le planning initial et réel,
+le backlog priorisé, les jalons, les comptes rendus, les risques suivis et les
+arbitrages datés ne sont pas réunis dans les pièces consultées. Le rapport ne reconstitue
+pas artificiellement ces traces.
+
+
+9. PILOTAGE DU PROJET ET CONDUITE DES TRAVAUX
+
+9.1. Organisation fonctionnelle du travail
+
+Les livrables présents permettent de reconstituer les grands blocs de travail sans
+attribuer de dates non établies :
+
+1. Compréhension du processus de gestion des cotations et identification des rôles.
+2. Définition du périmètre fonctionnel et du cycle de vie d’une cotation.
+3. Conception des données, de l’API, des règles de permission et des services métier.
+4. Réalisation du backend et du frontend.
+5. Génération des documents et intégration de l’envoi électronique.
+6. Ajout de la consultation d’historique, des statistiques, des relances et de
+   l’expiration.
+7. Vérifications techniques, préparation des migrations et description du déploiement.
+
+Cette organisation est un regroupement thématique des livrables existants, et non un
+planning rétrospectif. Les sources ne permettent pas d’indiquer la durée réelle de
+chaque étape, son état à une date donnée ou la personne responsable d’un jalon.
+
+9.2. Difficultés techniques et décisions
+
+La difficulté explicitement mentionnée dans la présentation concerne la reproduction
+du PDF de référence fourni par l’entreprise : le document possède une structure
+graphique précise, et l’intégration du logo, des blocs et des éléments documentaires
+nécessite encore des ajustements.
+
+Les éléments techniques examinés font ressortir les contraintes suivantes :
+
+- la production PDF dépend de WeasyPrint et de bibliothèques natives ; le rendu local
+  et le parcours runtime sont validés, mais pas l’image Linux de production ;
+- la configuration SMTP actuelle est déclarée remplacée, mais la livraison d’un
+  courriel demeure non vérifiée ;
+- les environnements de développement et de production visent des bases différentes,
+  SQLite localement et PostgreSQL sur Render ;
+- les données de la base locale `test.db` ne sont pas transférées par les migrations
+  de schéma ;
+- l’exécution réelle des tâches planifiées et des sauvegardes reste à établir en
+  production ;
+- la configuration du frontend conserve `VITE_RENDER_DEPLOYED` à `false`, ce qui
+  empêche de considérer l’instance comme activée uniquement sur la base du blueprint.
+
+Les mesures correctives consignées comprennent la suppression de valeurs par défaut
+sensibles, l’externalisation des paramètres entreprise, l’alignement du README sur le
+Cron réellement déclaré et les tâches Celery, ainsi que des erreurs explicites lorsque
+SMTP n’est pas renseigné. Les tests locaux et le build/lint frontend ont réussi ; la
+recette de l’entreprise et l’exploitation en production restent distinctes.
+
+9.3. Risques et suivi
+
+Les principaux risques liés au projet sont la disponibilité des dépendances PDF, la
+configuration de messagerie, l’absence de preuve de déploiement, la sauvegarde des
+données, la reprise éventuelle des données locales et la cohérence de la documentation
+d’exploitation. Ils sont recensés ici à partir des écarts observés, sans prétendre
+qu’un registre de risques formel a été tenu pendant le stage.
+
+9.4. Validation métier
+
+La note d’appréciation demande une démonstration complète et une validation formelle
+par le maître de stage. La présence d’un modèle de devis de référence et de devis
+générés apporte un support de comparaison. Toutefois, aucun procès-verbal signé, aucun
+compte rendu de démonstration complète ni aucune acceptation formelle des fonctionnalités
+n’a été retrouvé parmi les sources utilisées. La réception par l’entreprise n’est donc
+pas affirmée.
+
+
+10. DÉPLOIEMENT ET EXPLOITATION
+
+10.1. Architecture Render déclarée
+
+Le fichier `render.yaml` et le guide de déploiement décrivent la cible suivante :
+
+Composant Render                 Rôle et configuration déclarée
+Service web Docker API           Backend FastAPI construit depuis Backend/Dockerfile
+PostgreSQL                       Base de production reliée à DATABASE_URL
+Disque persistant                Stockage des PDF sous /var/data/pdfs
+Frontend statique                Build npm ci puis npm run build, publication de dist
+Cron horaire                     Commande d’expiration, planifiée au début de chaque heure
+
+La configuration prévoit une migration Alembic avant le démarrage de l’API, une
+vérification de santé sur `/health`, une clé `SECRET_KEY` générée par Render et des
+variables de configuration d’entreprise et de messagerie à fournir séparément. Le
+front-end reçoit l’URL publique de l’API par configuration. L’activation
+`VITE_RENDER_DEPLOYED` est explicitement à `false` dans le blueprint fourni.
+
+Le guide précise que le Cron vérifie que la base est au niveau attendu avant le
+traitement, et qu’il ne doit pas être confondu avec un worker Celery permanent. Il
+indique aussi que les migrations créent ou font évoluer le schéma sans importer les
+lignes de `test.db`. Le fichier `docker-compose.yml` est signalé comme vide dans le
+guide et ne constitue pas une configuration locale de déploiement exploitable.
+
+La figure 6 représente uniquement les composants déclarés dans le blueprint. Les
+liaisons en pointillés distinguent les services dont la configuration ou l’état en
+ligne n’a pas été vérifié.
+
+Figure 6. Déploiement Render déclaré, état opérationnel non confirmé
+[[IMAGE:06_deploiement_prevu.png]]
+
+10.2. Écart documentaire sur Celery et Redis
+
+Une version antérieure du README backend indiquait qu’un worker Celery et Render Key
+Value prenaient en charge les rappels et l’expiration. Le `render.yaml` et le guide de
+déploiement décrivent plutôt un Cron horaire pour l’expiration, sans worker permanent
+ni Redis/Key Value. La contradiction documentaire a été corrigée dans le README :
+celui-ci distingue désormais les tâches Celery présentes dans le code du Cron déclaré
+et précise que les rappels de paiement ne sont pas planifiés par le blueprint.
+L’exécution réelle du Cron ou des rappels sur Render n’est pas démontrée.
+
+10.3. État opérationnel vérifiable
+
+Les pièces établissent que le dépôt contient une configuration de déploiement
+préparée. Elles ne fournissent pas une URL de service confirmée, un résultat de contrôle
+`/health` sur l’instance publique, des journaux de déploiement Render, la réussite d’une
+migration en production, la vérification du Cron, une capture du frontend en ligne ou
+un essai réel de génération PDF et d’envoi SMTP en production.
+
+La conclusion factuelle est donc : « déploiement décrit et préparé dans le dépôt ;
+exploitation opérationnelle non prouvée par les éléments examinés ». Le statut
+`success` d’un éventuel workflow GitHub sans hook Render configuré ne suffirait pas,
+selon le guide, à prouver qu’un déploiement a eu lieu.
+
+10.4. Exploitation, sauvegarde et reprise
+
+Le disque des PDF prévu sur Render est persistant mais ne remplace pas une sauvegarde.
+Le guide attire l’attention sur les sauvegardes PostgreSQL disponibles selon le plan
+choisi, leur rétention réelle, un export chiffré indépendant et un test périodique de
+restauration. Ces opérations sont décrites comme mesures d’exploitation à vérifier,
+et non comme opérations déjà effectuées.
+
+Une migration de schéma Alembic ne réalise pas une migration des données métier depuis
+la base SQLite locale. La reprise de données, si elle est nécessaire, constitue une
+opération distincte dont le périmètre et le résultat ne sont pas documentés.
+
+
+11. LIMITES ET PERSPECTIVES
+
+11.1. Limites de l’état observé
+
+Les limites principales sont les suivantes :
+
+- absence de mesure chiffrée de l’impact avant/après ;
+- absence de recette complète en conditions réelles et de validation formelle par
+  l’entreprise, malgré les résultats locaux consignés à la section 7 ;
+- envoi SMTP réel non validé dans les traces disponibles ;
+- WeasyPrint validé localement, mais pas dans l’image Linux de production ;
+- écart de fidélité du PDF reconnu par la présentation et la note ;
+- fonctionnement public du blueprint Render non démontré ;
+- sauvegarde et restauration non prouvées ;
+- reprise des données de test.db non prise en charge par les migrations ;
+- absence de preuve formelle de validation des fonctionnalités par l’entreprise ;
+- absence de planning, backlog, comptes rendus et jalons consolidés ;
+- paramètres fiscaux et commerciaux avancés non établis comme couverts par les
+  modèles examinés.
+
+Ces limites ne remettent pas en cause la présence des composants logiciels. Elles
+délimitent ce qui peut être conclu à partir des preuves disponibles.
+
+11.2. Perspectives inscrites dans la présentation
+
+La présentation initiale identifie les perspectives suivantes :
+
+- améliorer et finaliser le rendu PDF afin de le rapprocher du modèle de l’entreprise ;
+- améliorer la page d’accueil ;
+- finaliser des fonctions complémentaires annoncées : mot de passe oublié, paramètres,
+  confidentialité, mentions légales, support technique et aide ;
+- poursuivre les tests et corrections ;
+- finaliser la documentation du projet.
+
+Ces points sont reportés comme travaux annoncés dans le support, et non comme
+fonctionnalités livrées. La note pédagogique complète ces perspectives par la nécessité
+de vérifier le cycle complet, les permissions, la fidélité du PDF, les mentions
+commerciales et légales paramétrables, la qualité du code, la reprise par l’entreprise
+et la validation formelle.
+
+11.3. Perspectives d’évaluation et d’exploitation
+
+Pour une évaluation future, les indicateurs à considérer sont ceux cités par la note :
+temps de préparation, saisies manuelles, erreurs, délai d’envoi, facilité de recherche
+dans l’historique et satisfaction. Ils nécessitent un protocole de mesure et des
+observations utilisateurs. Le tableau de bord existant peut fournir des données
+descriptives, mais ne remplace pas l’enquête ni le protocole comparatif.
+
+Sur le plan de l’exploitation, la configuration déjà préparée fournit une base pour
+déployer les composants Render déclarés. La confirmation du service en ligne, des
+migrations, du stockage, du SMTP et du Cron doit être établie par des journaux et
+essais d’acceptation avant de qualifier le système d’opérationnel. Aucun chiffre de
+gain, de disponibilité ou de satisfaction n’est avancé ici.
+
+
+12. CONCLUSION GÉNÉRALE
+
+Le projet répond à une problématique métier pertinente pour Trident Oil Services :
+centraliser et automatiser la gestion des cotations commerciales. L’état du dépôt
+montre une application structurée qui combine une interface React/TypeScript, une API
+FastAPI, des modèles relationnels, des rôles, un cycle de statut, des calculs de
+montants, la génération documentaire, l’historique, des indicateurs et une préparation
+de déploiement.
+
+Les sources confirment plusieurs mesures de sécurité applicative, dont
+l’authentification JWT, le hachage des mots de passe, la vérification des rôles et le
+cloisonnement des cotations personnelles. Les résultats locaux consignés comprennent
+32 tests backend réussis, 0 échoué et 3 ignorés, ainsi que trois parcours runtime
+réussis sur trois. Le lint et le build frontend ont réussi. La génération PDF avec
+WeasyPrint a été vérifiée localement, sans preuve de compatibilité sur l’image de
+production. La configuration SMTP actuelle est déclarée remplacée, mais aucune
+livraison de courriel n’a été constatée.
+
+Ces résultats décrivent des validations locales, et non une recette en production. Le
+dossier ne prouve ni la livraison effective des courriels, ni un déploiement public sur
+Render, ni une sauvegarde restaurable, ni une reprise des données, ni l’acceptation
+formelle de l’entreprise. Il ne contient pas non plus de mesures avant/après permettant
+de chiffrer les gains. Les conclusions sont limitées aux capacités implémentées et aux
+preuves locales identifiées.
+
+En cohérence avec la note d’appréciation, le travail démontre un investissement
+substantiel en conception et développement logiciel et un alignement pertinent avec
+les compétences de sécurisation, traçabilité et transformation numérique. La
+validation complète du niveau assistant-ingénieur demeure liée à la production et à la
+conservation de preuves opérationnelles, de tests, de pilotage et d’évaluation. Aucun
+composant d’intelligence artificielle n’étant établi, le système est décrit comme une
+application de gestion avec statistiques descriptives.
+
+
+ANNEXE A. SYNTHÈSE DES PRINCIPALES ROUTES API
+
+Authentification
+- POST /api/v1/auth/login
+- POST /api/v1/auth/logout
+- GET  /api/v1/auth/me
+- PATCH /api/v1/auth/change-password
+
+Utilisateurs et demandes d’accès
+- POST   /api/v1/users/
+- GET    /api/v1/users/
+- GET    /api/v1/users/{user_id}
+- PUT    /api/v1/users/{user_id}
+- DELETE /api/v1/users/{user_id}
+- Routes `/api/v1/access-requests` et traitement associé, réservés à l’administration
+
+Cotations
+- POST   /api/v1/quotations/
+- GET    /api/v1/quotations/
+- GET    /api/v1/quotations/{quotation_id}
+- PUT    /api/v1/quotations/{quotation_id}
+- DELETE /api/v1/quotations/{quotation_id}
+- GET    /api/v1/quotations/{quotation_id}/history
+- PATCH  /api/v1/quotations/{quotation_id}/status
+- POST   /api/v1/quotations/{quotation_id}/generate-pdf
+- GET    /api/v1/quotations/{quotation_id}/pdf
+- POST   /api/v1/quotations/{quotation_id}/send
+
+Articles
+- POST   /api/v1/quotations/{quotation_id}/articles
+- PUT    /api/v1/quotations/{quotation_id}/articles/{article_id}
+- DELETE /api/v1/quotations/{quotation_id}/articles/{article_id}
+
+Tableau de bord, relances et santé
+- GET /api/v1/dashboard/summary
+- GET /api/v1/dashboard/charts
+- GET /api/v1/reminders
+- GET /api/v1/quotations/{quotation_id}/reminders
+- POST /api/v1/quotations/{quotation_id}/reminders/send
+- GET /health
+- GET /system/tasks-health (administrateur)
+- GET /system/smtp-check (administrateur)
+
+
+ANNEXE B. SOURCES DOCUMENTAIRES ET TECHNIQUES EXAMINÉES
+
+Documents de contexte et d’évaluation :
+- REFERENCE/Presentation_Projet_Stage_Trident_Oil_Services.pdf
+- REFERENCE/Note_appreciation_et_recommandations_stage_Zana_KONE.pdf
+- REFERENCE/infos Global.txt
+- REFERENCE/mcd.png
+- REFERENCE/Q-000001.pdf et autres exemples PDF conservés dans REFERENCE/
+
+Documentation de l’application et du déploiement :
+- Backend/README.md
+- Backend/VERIFICATION_CDC_FINALE.md
+- Backend/requirements.txt
+- DEPLOYMENT_GUIDE.md
+- render.yaml
+- docker-compose.yml
+- Frontend/package.json
+
+Code et tests :
+- Backend/app/models/ : modèles utilisateurs, cotations, articles, audit, demandes
+  d’accès, compteurs et relances
+- Backend/app/routers/ : routes d’authentification, utilisateurs, cotations, articles,
+  tableau de bord, demandes et relances
+- Backend/app/core/security.py et Backend/app/core/deps.py
+- Backend/app/services/ : calculs, PDF, références, courriels, statuts et dashboard
+- Backend/app/tasks/ : expiration des cotations
+- Backend/tests/ et Backend/tests/runtime_validation/
+- Backend/debug_out.txt : trace locale partielle
+- Backend/storage/test_reportlab.pdf : artefact de test PDF
+
+Les fichiers contenant des identifiants, mots de passe ou secrets ne sont pas reproduits
+dans ce rapport.
+
+
+ANNEXE C. RÉFÉRENCES BIBLIOGRAPHIQUES ET DOCUMENTAIRES
+
+Documents de cadrage :
+1. KONE, Zana Jean-Baptiste. Présentation du projet de stage Trident Oil Services,
+   année académique 2025–2026, 14 diapositives, fichier PDF conservé dans REFERENCE/.
+2. IIAA – Suivi académique des stages 2026. Note d’appréciation et de recommandations,
+   Stage d’assistant-ingénieur – Zana Jean-Baptiste KONE, 25 août 2026, 4 pages.
+3. « infos Global.txt », notes de périmètre et de fonctionnement métier conservées
+   dans REFERENCE/.
+4. « STATUTS_QUOTATIONS.txt », règles de transition et de portée du dashboard
+   conservées à la racine du dépôt.
+5. « VERIFICATION_CDC_FINALE.md », vérification du cahier des charges et état des
+   opérations documenté dans Backend/.
+6. « DEPLOYMENT_GUIDE.md », guide de configuration et de déploiement Render.
+
+Sources techniques du projet :
+7. Dépôt local ProQuote ERP : modèles Backend/app/models/, routes
+   Backend/app/routers/, services Backend/app/services/, tâches Backend/app/tasks/,
+   migrations Backend/alembic/versions/ et tests Backend/tests/.
+8. Frontend/package.json et Backend/requirements.txt, manifestes de dépendances
+   utilisés pour identifier la pile technologique.
+9. render.yaml et Backend/Dockerfile, configuration déclarative d’hébergement.
+
+Les diagrammes, la matrice des permissions et le présent rapport sont dérivés de ces
+sources locales. Les versions figurant dans les manifestes ne signifient pas que ces
+versions ont été installées ou exécutées sur le service Render.

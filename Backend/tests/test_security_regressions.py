@@ -164,3 +164,17 @@ def test_pdf_reference_cannot_escape_storage_filename():
     assert "/" not in sanitized
     assert "\\" not in sanitized
     assert sanitized not in (".", "..")
+
+
+def test_health_returns_service_unavailable_when_database_is_down(monkeypatch):
+    import app.main as main
+
+    def fail_connect():
+        raise ConnectionError("database unavailable")
+
+    monkeypatch.setattr(main.engine, "connect", fail_connect)
+
+    response = client.get("/health")
+
+    assert response.status_code == 503
+    assert response.json()["detail"]["status"] == "failed"

@@ -1,0 +1,413 @@
+PROQUOTE ERP - COMPTE RENDU DE VERIFICATION ET PREUVES
+Date de mise a jour : 13 octobre 2026
+Depot : C:\Users\hp\Desktop\STAGE_ENI
+
+LEGENDES
+VERIFIE : preuve d'execution ou source identifiable examinee.
+CORRIGE : correction effectuee et controlee.
+PARTIELLEMENT VERIFIE : preuve locale ou partielle, sans validation generale.
+NON VERIFIE : aucune preuve suffisante.
+A FAIRE : action restante, avec son motif et la preuve attendue.
+
+1. ETAT GENERAL
+
+[VERIFIE] Le frontend React/TypeScript et l'API FastAPI fonctionnent en environnement
+local. La suite backend et les parcours runtime ont ete executes avec SQLite et des
+donnees temporaires/synthetiques. Le lint et le build frontend ont reussi.
+
+[VERIFIE] Le projet n'est pas deploye en production. render.yaml et les guides
+decrivent une cible de deploiement, pas un service en ligne. Aucun deploiement,
+migration de production, URL publique, Cron en production ou reception de courriel
+n'a ete confirme. C'est la seule reserve de deploiement.
+
+[PARTIELLEMENT VERIFIE] Les tests et verifications locales ne constituent ni une
+recette de l'entreprise ni une validation formelle du tuteur. Aucun chiffre de gain
+metier ou retour utilisateur n'a ete etabli par les elements techniques examines.
+
+2. DIAGRAMMES ET PREUVES VISUELLES
+
+[VERIFIE] Avant toute creation, le dossier REFERENCE/figures a ete controle. Il
+contient deja six diagrammes sources Mermaid (.mmd) et leurs rendus PNG. Les six SVG
+existants portent les memes noms de base et sont des rendus des memes sources; ils
+ne representent pas de nouveaux diagrammes. Le XML des six SVG a ete valide et chaque
+SVG a une racine svg. Aucun diagramme supplementaire n'a ete cree lors de cette mise
+a jour.
+
+[VERIFIE] La capture REFERENCE/figures/07_runtime_tests_terminal_capture.png montre
+la fenetre Windows Terminal pendant l'execution des trois tests runtime. Elle affiche
+les trois cas individuellement en PASSED et le compte explicite PASSED=3, FAILED=0,
+SKIPPED=0, EXIT_CODE=0.
+
+3. TRAVAUX ET CORRECTIONS
+
+[CORRIGE] Frontend/src/App.tsx : les erreurs ESLint sur l'expression reguliere et la
+mise a jour d'etat synchrone dans un effet ont ete corrigees; la dependance isAdmin
+manquante a ete ajoutee. Le lint et le build ont ensuite reussi. Aucun comportement
+metier n'a ete modifie volontairement.
+
+[CORRIGE] Backend/README.md : la documentation distingue maintenant les taches
+Celery presentes dans le code du Cron d'expiration declare dans render.yaml. Elle
+precise que le broker Celery utilise memory://, que beat_schedule est vide, qu'aucun
+worker ni Redis/Key Value n'est declare et que les rappels de paiement ne sont pas
+planifies par le blueprint.
+
+[CORRIGE] Les renvois du rapport source sont coherents avec les legendes : section
+3.6 -> figure 3 (sequence), section 4.1 -> figure 4 (architecture), section 4.3 ->
+figure 5 (modele de donnees). Le texte source du rapport a ete actualise pour refleter
+les resultats de tests et les limites verifiees. Les versions DOCX et PDF ont ete
+resynchronisees depuis le DOCX actualise; les six images integrees sont conservees.
+
+[VERIFIE] Les tests automatises de notification utilisent des mocks. Ils verifient
+notamment les conditions des rappels, la construction du message et le traitement
+d'un echec simule sans envoyer de courriel reel.
+
+4. RESULTATS DES TESTS
+
+[VERIFIE] Suite backend complete, execution du 13 octobre 2026 :
+Repertoire : Backend
+Commande : python -m pytest -q tests
+Resultat : 32 reussis, 0 echoue, 3 ignores, 54 avertissements; code retour 0.
+Les trois cas ignores sont les parcours runtime lorsque RUNTIME_API_URL n'est pas
+defini. Ils ne sont pas des echecs. Les tests ont utilise une base SQLite temporaire,
+un stockage PDF temporaire, une cle de test et SMTP desactive. Backend/test.db n'a
+pas ete utilise par cette execution.
+
+[VERIFIE] Trois parcours runtime, execution distincte contre une API locale :
+Commande : python -m pytest -vv --tb=no -rN tests/runtime_validation
+Resultat : 3 reussis, 0 echoue, 0 ignore; code retour 0.
+- test_login_profile_and_logout_invalidate_session : authentification, profil,
+  deconnexion et rejet du jeton invalide apres deconnexion.
+- test_dashboard_reflects_persisted_quotation_and_cleanup : cotation synthetique,
+  resume et graphique du tableau de bord, suppression et verification du nettoyage.
+- test_create_persist_generate_and_download_current_pdf : creation, relecture,
+  controle du montant, generation puis telechargement d'un PDF valide.
+Environnement : API sur 127.0.0.1:29192, base SQLite jetable et compte admin
+synthetique. Le SMTP a ete desactive. Aucune base de donnees existante n'a ete ciblee.
+La capture est enregistree dans REFERENCE/figures/07_runtime_tests_terminal_capture.png.
+
+[VERIFIE] Frontend :
+- npm run lint : reussi, sans erreurs ni avertissements apres correction.
+- npm run build : reussi (tsc -b puis Vite).
+
+5. ELEMENTS TECHNIQUES CONTROLES
+
+[VERIFIE] PDF : WeasyPrint a produit un PDF a partir de donnees synthetiques. Le
+parcours runtime a confirme la persistance de la cotation, la generation et le
+telechargement du PDF, le type application/pdf, la signature %PDF- et le nom de
+fichier attendu. Les donnees testees sont synthetiques. Cela ne valide pas le rendu
+dans l'image Linux de production ni la fidelite au gabarit officiel. Le chemin
+generate_pdf ne bascule pas automatiquement vers le script ReportLab.
+
+[PARTIELLEMENT VERIFIE] SMTP : selon le porteur du projet, la configuration a ete
+remplacee par celle de l'entreprise. Les valeurs de Backend/.env n'ont pas ete lues
+ni reproduites. Aucun envoi reel, connexion SMTP ou accuse de reception n'a ete
+constate; les tests utilisent des mocks. L'ancien HTTP 400 "SMTP host is not
+configured" dans Backend/debug_out.txt decrit un essai anterieur et ne prouve pas
+l'etat de la configuration actuelle. Ne pas declarer l'envoi ou la reception valides.
+
+[VERIFIE] Securite et permissions : le code et les tests examinent les roles
+ADMIN, RESPONSABLE et COLLABORATEUR, le cloisonnement des cotations d'un collaborateur,
+les jetons de session, le hachage de mot de passe et les controles d'acces. Le test
+runtime a verifie la connexion et l'invalidation du jeton a la deconnexion. Il ne
+s'agit pas d'un test d'intrusion ni d'une recette exhaustive de chaque permission.
+
+[VERIFIE] Donnees : les migrations Alembic creent ou font evoluer le schema. Elles
+ne transferent pas les lignes de SQLite locale vers PostgreSQL.
+
+[NON VERIFIE] Aucune execution de sauvegarde/restauration ni preuve de restauration
+reussie n'a ete identifiee. Le stockage persistant des PDF prevu dans le blueprint
+n'est pas une sauvegarde.
+
+[VERIFIE] Planification et production : le blueprint declare un Cron horaire pour
+l'expiration, mais cela ne prouve pas son activation. La configuration Celery ne
+constitue pas une planification inter-processus operationnelle. Aucun service Render
+n'est deploye ou confirme.
+
+6. ELEMENTS QUI RESTENT A ETABLIR
+
+[NON VERIFIE] Reception SMTP : aucune preuve ne confirme qu'un courriel a ete recu
+avec la configuration actuelle. Pour affirmer ce resultat, conserver une preuve
+autorisee de livraison (par exemple un journal de livraison ou une confirmation du
+destinataire), sans divulguer de secret ni de donnees client. Aucun essai SMTP reel
+n'a ete lance ici.
+
+[NON VERIFIE] Mesure des gains : aucune duree avant/apres, taux d'erreur, volume,
+delai de traitement ou productivite n'est etabli par le depot. Si le rapport avance
+un gain, obtenir un jeu de donnees autorise, comparable et date, et documenter la
+methode de calcul.
+
+[NON VERIFIE] Retour utilisateur et validation : aucun proces-verbal de recette,
+retour utilisateur ou validation formelle du tuteur/de l'entreprise n'a ete fourni.
+Ne pas presenter l'application comme approuvee par l'entreprise sans piece datee.
+
+[PARTIELLEMENT VERIFIE] PDF : le fonctionnement technique local est valide, mais
+l'accord sur la fidelite du gabarit commercial, les mentions et les regles commerciales
+doit provenir d'une validation autorisee de l'entreprise.
+
+[NON VERIFIE] Sauvegarde/restauration : aucune preuve de politique active, retention
+effective, export independant ou test de restauration n'est disponible. Ne pas
+presenter cette capacite comme implementee ou testee.
+
+[A FAIRE] Deploiement : aucune action n'est demandee ou effectuee ici. Le seul point
+de deploiement a conserver est que le projet n'est pas encore en production; ne pas
+le presenter comme deploye ou valide en conditions reelles.
+
+7. ETAT DE PREPARATION DU RAPPORT
+
+[VERIFIE] Le rapport peut decrire des maintenant le besoin, les acteurs, l'architecture
+React/TypeScript et FastAPI, le modele relationnel, les statuts, les roles, les tests
+locaux executes, les resultats 32/0/3 et 3/0/0, les corrections frontend, le PDF
+localement teste et la configuration de deploiement declarative.
+
+[PARTIELLEMENT VERIFIE] Le SMTP doit etre formule comme configure selon l'information
+du porteur, mais sans preuve de livraison. Les PDF doivent etre presentes comme
+valides localement, pas comme valides sur Render. La securite doit etre decrite comme
+controlee dans le code et plusieurs tests, pas comme certification. Le dashboard
+fournit des indicateurs descriptifs; aucun composant d'IA n'est demontre.
+
+[VERIFIE] Aucun gain chiffre, retour utilisateur, validation du tuteur, sauvegarde
+restaurable ou mise en production n'est affirme sans preuve.
+
+8. FICHIERS ET COMMANDES DE REPRODUCTION
+
+Fichiers modifies ou produits, selon git status au 13 octobre 2026 :
+- Backend/Dockerfile
+- Backend/README.md
+- Backend/app/main.py
+- Backend/app/tasks/celery_app.py
+- Backend/app/tasks/expire_quotations.py
+- Backend/app/tasks/run_expiration_job.py
+- Backend/requirements.txt
+- Backend/tests/test_notification_services.py
+- Backend/tests/test_scheduled_expiration.py
+- Backend/tests/test_security_regressions.py
+- DEPLOYMENT_GUIDE.md
+- Frontend/src/App.tsx
+- render.yaml
+- docker-compose.yml
+- STATUTS_QUOTATIONS.txt
+- .github/modernize/assessment/engines/facts/architecture-diagram.md
+- RAPPORT_FINAL_PROQUOTE_ERP.txt
+- RAPPORT_FINAL_PROQUOTE_ERP.docx
+- RAPPORT_FINAL_PROQUOTE_ERP.pdf
+- 1manquand.txt
+- REFERENCE/figures/07_runtime_tests_terminal_capture.png
+La capture est presente sur disque; le motif REFERENCE/* de .gitignore l'exclut du
+suivi Git. Les diagrammes MMD, PNG et SVG preexistants n'ont pas ete remplaces.
+
+Commandes utiles :
+- Backend, depuis Backend : python -m pytest -q tests
+- Parcours runtime, depuis Backend avec API locale isolee : python -m pytest -vv
+  --tb=no -rN tests/runtime_validation
+- Frontend, depuis Frontend : npm run lint
+- Frontend, depuis Frontend : npm run build
+
+FIN DU COMPTE RENDU
+
+
+========================================================================
+COMPLEMENT DE TRAVAIL POUR LA FINALISATION DU RAPPORT
+Mise a jour de preparation : 13 octobre 2026
+========================================================================
+
+Ce complement organise les informations a integrer au rapport final. Il ne remplace
+pas le compte rendu de verification ci-dessus et n'en efface aucun element. Les
+passages ci-dessous distinguent les observations de la note du professeur, les
+constats issus du depot local, les informations communiquees par le porteur du
+projet et les elements qui restent a etablir.
+
+Convention de preuve :
+- « Vérifié » : un resultat concret est disponible et sa portee est precisee.
+- « En cours de vérification » : une source ou une preuve partielle existe, mais
+  elle ne suffit pas a valider toute la demande.
+- « À documenter » : le fait ou la preuve doit encore etre fourni ou consigne.
+- « Non réalisé » : aucun resultat n'est disponible et le travail correspondant
+  n'est pas etabli comme ayant ete execute.
+
+Un statut « Vérifié » porte uniquement sur l'element nomme dans la ligne. Il ne
+vaut ni validation generale de l'application, ni validation en production, ni
+acceptation par l'entreprise. Le code local, un test automatise, une capture, une
+declaration du porteur et une validation du professeur sont des sources de nature
+different; ils ne doivent pas etre confondus.
+
+
+9. HISTORIQUE ET EVOLUTION DU PROJET
+
+| Période / date | État ou observation | Évolution / élément connu | Source et statut |
+|---|---|---|---|
+| État initial (date à préciser) | Le besoin de gestion des devis est décrit comme reposant sur des manipulations manuelles et des documents dispersés. Aucun indicateur initial chiffré n'est fourni. | L'application vise la centralisation de la création, du document PDF, de la transmission, du suivi et de l'historique. | Présentation de stage et note du 25 août 2026 ; description qualitative, mesure initiale [INFORMATION À FOURNIR]. |
+| 25 août 2026 | Le professeur juge le sujet pertinent et l'avancement fonctionnel favorable à titre provisoire. Le prototype présenté couvre, selon la note, le coeur fonctionnel; la mise en page du PDF est jugée moins aboutie que le modèle fourni. | La note demande des preuves plus développées sur l'architecture, la sécurité, les tests, le déploiement, le pilotage et la mesure des résultats. | Note d'appréciation et de recommandations ; voir la synthèse fidèle en section 10. |
+| Après la note, dates à préciser | Des travaux et corrections sont consignés dans le présent compte rendu, notamment sur le frontend, la documentation technique et la préparation du rapport. | Les changements précis, leur date et leur lien avec chaque remarque sont détaillés dans le tableau de la section 11. Ne pas attribuer une correction au professeur sans lien explicite. | Historique Git / fichiers locaux et compte rendu au 13 octobre 2026 ; dates de chaque intervention [À CONFIRMER]. |
+| 13 octobre 2026 | Une suite backend, des parcours runtime sur API locale et les commandes lint/build du frontend ont des résultats consignés. | 32 tests backend réussis, 0 échoué, 3 ignorés; 3 parcours runtime réussis; lint et build frontend réussis. Le périmètre et les limites figurent en section 14 et dans le compte rendu précédent. | Journal de vérification et capture runtime disponibles ; tests locaux seulement. |
+| État actuel à la rédaction | Des fonctionnalités et contrôles sont présents dans le code local. Aucune mise en production, recette formelle de l'entreprise ou mesure de gain métier n'est établie par les preuves répertoriées ici. | Mettre à jour cette ligne après réception de nouvelles preuves, sans extrapoler les tests locaux à une version déployée. | Dépôt local et pièces recensées ; déploiement, recette et gains [NON VÉRIFIÉS]. |
+
+Informations encore nécessaires pour compléter l'historique :
+- [INFORMATION À FOURNIR] Dates approximatives des grandes étapes et versions
+  présentées au professeur ou à l'entreprise.
+- [INFORMATION À FOURNIR] État du prototype au début du stage et difficultés
+  réellement rencontrées à chaque période.
+- [INFORMATION À FOURNIR] Corrections réalisées après chaque retour, avec date,
+  fichier ou fonctionnalité concernée et effet observable.
+- [PREUVE À AJOUTER] Captures ou résultats comparables montrant l'évolution, si
+  disponibles; ne pas fabriquer de comparaison avant/après.
+
+
+10. NOTE D'APPRECIATION DU PROFESSEUR
+
+Document consulté : `REFERENCE/Note_appreciation_et_recommandations_stage_Zana_KONE.pdf`,
+daté du 25 août 2026. La synthèse ci-dessous conserve la portée provisoire de l'avis
+et ne constitue pas une validation finale du stage.
+
+- Appréciation générale : la note considère que le sujet répond à un besoin métier
+  réel et qu'il est cohérent avec le stage d'assistant-ingénieur. Elle indique que le
+  prototype présenté couvre le coeur fonctionnel et que le devis généré constitue
+  une preuve de fonctionnement, tout en relevant une mise en page moins aboutie que
+  le modèle de l'entreprise.
+- Avis : la note qualifie l'appréciation de favorable sur la pertinence du sujet et
+  l'avancement fonctionnel. Elle précise que la démonstration complète du niveau
+  assistant-ingénieur reste conditionnée par des preuves complémentaires.
+- Compétences : C1 est identifiée comme compétence principale; C3 est partiellement
+  démontrée; C5 est mobilisée mais peu documentée; C4 est mobilisée par la
+  digitalisation mais appelle des indicateurs avant/après. C2 n'est pas démontrée
+  dans l'état décrit par la note; un tableau de bord statistique ne suffit pas à
+  revendiquer une solution d'IA.
+- Axes demandés : analyse fonctionnelle et règles métier; architecture, choix
+  techniques et hébergement; sécurité, fiabilité et traçabilité; tests et qualité;
+  évaluation des résultats; pilotage, documentation et démonstration.
+- Points à revoir lors d'une réunion : cycle complet du devis, cohérence des
+  permissions, fidélité du PDF, paramétrage des informations commerciales et légales,
+  absence de secrets dans le code, qualité/reprise du projet et validation formelle.
+
+Lien entre l'avis et la suite des travaux :
+- Le rapport décrit les rôles et les règles observées dans le backend, mais ne les
+  présente pas comme une validation de l'interface ou de la production.
+- Les diagrammes, le modèle de données, le compte rendu de tests et les corrections
+  consignées répondent partiellement aux demandes de preuve; le tableau de section 11
+  précise ce qui est effectivement couvert.
+- Aucun propos de la note ne permet d'affirmer qu'une mise en production, une recette
+  entreprise ou un gain mesuré a ensuite eu lieu.
+
+[PREUVE À AJOUTER] Si le professeur a formulé des remarques plus récentes, fournir
+leur texte exact ou le compte rendu daté avant de compléter cette synthèse.
+
+
+11. TABLEAU DE SUIVI DES DEMANDES DU PROFESSEUR
+
+| Demande ou observation du professeur | État initial ou problème constaté | Correction réalisée | État actuel de la fonctionnalité | Preuve disponible | Emplacement prévu dans le rapport final |
+|---|---|---|---|---|---|
+| Présenter les acteurs, responsabilités, règles métier et cycle complet du devis. | Le besoin initial est décrit comme principalement oral; aucun cahier des charges initial formel n'est identifié. | Les rôles, règles API, états et séquence sont décrits dans le rapport et les diagrammes disponibles. | En cours de vérification — description locale disponible, validation détaillée des besoins non fournie. | Rapport, sections 3.1 à 3.6; matrice des permissions; figures de cas d'utilisation, états et séquence. | Sections 3 et 5; figures 1 à 3. |
+| Détailler l'architecture, les technologies, le modèle de données et justifier les choix. | La note demande des éléments plus détaillés que la présentation initiale. | Architecture et modèle de données sont représentés dans le rapport à partir du dépôt local. | En cours de vérification — les documents existent; justification et adéquation à confirmer avec les choix réellement faits. | Rapport, sections 4 et 5; diagrammes d'architecture et de données; manifestes du projet. | Sections 4 et 5; figures 4 et 5. |
+| Décrire l'hébergement, la configuration et le processus de mise en production. | Une cible Render est déclarée, mais aucun déploiement effectif n'est confirmé. | Documentation de déploiement et configuration déclarative disponibles; elles ne prouvent pas une mise en service. | En cours de vérification — préparation documentée, production non réalisée ou non confirmée. | `render.yaml`, `DEPLOYMENT_GUIDE.md`, rapport et compte rendu de vérification. | Section 10; figure 6; limites en section 11. |
+| Documenter authentification, droits, journalisation, protection des données, erreurs et sessions. | La note estimait la sécurité, la fiabilité et la traçabilité partiellement démontrées. | Les règles présentes dans l'API et certains tests de sécurité/session sont recensés. | En cours de vérification — preuve locale partielle; aucune certification, recette exhaustive ou validation de sauvegarde/restauration. | `REFERENCE/matrice_roles_permissions.md`; tests backend; parcours runtime de connexion/déconnexion. | Section 6 et annexe A. |
+| Décrire sauvegardes, restauration et continuité de service. | Aucune exécution de sauvegarde/restauration ou preuve de restauration réussie n'est recensée. | Aucune correction ou recette effective de sauvegarde n'est établie par les éléments disponibles. | À documenter — ne pas présenter le stockage persistant des PDF comme une sauvegarde. | Aucune preuve de sauvegarde/restauration recensée. | Sections 6, 10 et 11, avec limite explicite. |
+| Documenter les tests et vérifier calculs, PDF, courriels, accès, statuts et cas limites. | La note demande des preuves de tests plus détaillées et un relevé des anomalies. | Des suites locales et des parcours runtime sont exécutés; leurs résultats précis figurent en section 14. | En cours de vérification — tests présents et exécutés, mais tous les scénarios demandés ne sont pas couverts ou démontrés. | Résultats backend 32/0/3, runtime 3/0/0, lint/build; tests automatisés et capture cités en section 14. | Section 7 et annexes de tests. |
+| Mesurer temps, erreurs, saisies manuelles, délai d'envoi et satisfaction. | Aucune mesure avant/après, série comparable ou enquête utilisateur n'est recensée. | Aucune mesure chiffrée ni collecte d'avis n'est établie. | Non réalisé — aucun gain chiffré ne peut être revendiqué. | Aucune donnée avant/après ni retour utilisateur disponible. | Section 8; limites en sections 9 et 11. |
+| Documenter planning, backlog, jalons, risques, réunions et arbitrages. | La note considère le pilotage mobilisé mais peu documenté; aucun historique complet n'est disponible. | Les difficultés et quelques corrections sont consignées dans les documents techniques, sans reconstitution complète du pilotage. | À documenter — compléter seulement avec dates, décisions et pièces réellement disponibles. | Note du 25 août; historique Git partiel; guides et compte rendu technique. | Section 9 et annexe documentaire. |
+| Vérifier le cycle de vie complet: création, validation, PDF, envoi, suivi et archivage. | La note demande une démonstration de bout en bout. Les preuves runtime actuelles couvrent création/persistance/PDF, mais pas l'envoi réel. | Des règles de statut et une séquence existent; l'envoi réel et une recette complète ne sont pas établis. | En cours de vérification — parcours local partiel; SMTP et validation formelle restent sans preuve. | Figure 3; tests locaux PDF; tests notification avec mocks; aucune preuve de livraison SMTP. | Sections 3.5, 5 et 7. |
+| Améliorer ou vérifier la fidélité du PDF par rapport au modèle de l'entreprise. | La note relève une présentation moins aboutie que le modèle fourni. | Le PDF courant a été généré et téléchargé lors d'un test local avec données synthétiques. | En cours de vérification — génération locale vérifiée; fidélité visuelle et accord de l'entreprise non validés. | PDF local généré, test runtime et fichier de référence si disponible; capture comparative [PREUVE À AJOUTER]. | Sections 5, 7 et 11. |
+| Vérifier mentions, coordonnées bancaires, devises, taxes et conditions commerciales. | La note demande de confirmer leur présence et leur paramétrage. | Des éléments de configuration et des pages d'information figurent dans le code; leur exactitude métier/légale n'est pas validée ici. | En cours de vérification — confirmer les exigences avec une personne autorisée; ne pas publier de données sensibles dans le rapport. | Code frontend/backend et configuration; confirmation d'entreprise [PREUVE À AJOUTER]. | Sections 5, 6 et 11. |
+| Ne pas revendiquer une fonctionnalité d'IA non démontrée. | La note indique que le tableau de bord statistique ne constitue pas à lui seul une solution d'IA. | Le rapport décrit le tableau de bord comme descriptif et ne revendique pas de modèle intelligent. | Vérifié — uniquement l'absence de revendication dans le rapport et l'observation explicite de la note; ne pas extrapoler au-delà des éléments examinés. | Note du 25 août et formulation du rapport (résumé, section 8.3, conclusion). | Résumé, section 8 et conclusion. |
+| Prévoir une démonstration, une documentation technique et la validation du maître de stage. | La note demande une démonstration complète et une validation formelle; aucune acceptation datée n'est recensée. | Documentation technique présente; une démonstration peut être préparée, mais aucune validation formelle n'est établie. | À documenter — joindre la preuve de démonstration ou le procès-verbal si elle a lieu. | Guides, rapport et artefacts de tests; procès-verbal / validation [PREUVE À AJOUTER]. | Sections 7, 9 et 10. |
+
+
+12. FONCTIONNALITES FINALES PAR PROFIL
+
+Les éléments de cette section décrivent les fonctionnalités et contrôles recensés dans
+le code local, principalement côté API. Ils ne prouvent pas que chaque parcours de
+l'interface a été exécuté, ni qu'une version en production est opérationnelle.
+RESPONSABLE correspond au profil « Manager » de la présentation; COLLABORATEUR
+correspond au profil « Employé / Commercial ».
+
+| Profil | Fonctionnalités présentes dans le code local | Autorisations et limites observées | Preuve de fonctionnement actuellement répertoriée |
+|---|---|---|---|
+| Administrateur (ADMIN) | Authentification et profil; gestion des comptes et demandes d'accès; consultation globale des cotations; opérations administratives; changements de statut autorisés; tableau de bord global; consultation/gestion des relances et contrôles d'état réservés à l'administration. | Rôle autorisé sur les routes d'administration. La suppression d'une cotation est réservée à ADMIN. Les actions de document restent soumises aux conditions de cotation et de configuration. | Les règles sont recensées dans la matrice API. Le parcours runtime couvre connexion, profil et déconnexion avec compte synthétique; aucune recette exhaustive de tous les écrans ADMIN. |
+| Manager / Responsable (RESPONSABLE) | Consultation globale des cotations et indicateurs; création et modification des cotations accessibles; changements de statut permis; consultation des relances et envoi des relances autorisées. | Accès global aux cotations et au tableau de bord selon les routes; pas de gestion des comptes réservée à ADMIN; suppression de cotation refusée. | Les permissions sont présentes dans la matrice et les routes locales. Le test runtime du tableau de bord vérifie une réponse API avec données synthétiques, pas l'ensemble du tableau de bord Manager visuel. |
+| Collaborateur / Employé commercial (COLLABORATEUR) | Création de cotations; consultation/modification de ses cotations; ajout et gestion de leurs articles; génération/téléchargement/envoi sous conditions; consultation d'indicateurs limités à ses données. | Les données sont cloisonnées au périmètre personnel. La suppression de cotation et la modification directe de statut sont refusées. PDF et envoi dépendent notamment de l'accès à la cotation et des composants/configurations externes. | Le cloisonnement est décrit dans la matrice et les tests de sécurité. Le parcours runtime PDF utilise des données synthétiques mais ne constitue pas une recette complète du profil commercial. |
+
+Sources principales : `REFERENCE/matrice_roles_permissions.md`, routes et dépendances
+de `Backend/app/`, tests de `Backend/tests/` et rapport final, section 3. Les preuves
+de captures d'écran par profil restent [À AJOUTER] si elles sont disponibles.
+
+
+13. INTERFACE ET PARCOURS UTILISATEUR
+
+Le code frontend local référence les vues Aide, Support, Mentions légales et
+Confidentialité, ainsi que des éléments de tableau de bord et de graphique mensuel.
+Cette constatation de code n'atteste ni le rendu correct dans un navigateur, ni la
+validation du contenu par l'entreprise. Le parcours d'accueil doit également être
+décrit à partir de l'écran réellement accessible et de captures.
+
+| Élément à décrire | État établi à partir des éléments locaux | Vérification / preuve encore nécessaire | Emplacement prévu |
+|---|---|---|---|
+| Tableau de bord Manager | Les rôles ADMIN et RESPONSABLE sont dirigés vers un tableau de bord dans le frontend; le backend fournit résumé et graphiques. Les données globales du RESPONSABLE sont indiquées dans la matrice API. | Capture authentifiée avec profil de test; vérifier affichage, filtres et cohérence des valeurs, sans données client réelles. | Sections 5 et 8; [CAPTURE À AJOUTER]. |
+| Graphiques de performance mensuelle | Une série graphique mensuelle est référencée dans `Frontend/src/App.tsx`; les données du dashboard sont aussi couvertes par un parcours API local avec données synthétiques. | Capture du graphique rendu; préciser les métriques, la période et les calculs; confirmer que le visuel affiché correspond aux données renvoyées. | Sections 5 et 7; [CAPTURE À AJOUTER]. |
+| Page d'accueil | [À CONFIRMER] Identifier le parcours et le contenu réellement affichés pour l'utilisateur non authentifié. | Capture du navigateur et vérification des liens de navigation. Ne pas déduire l'existence d'une page distincte depuis le seul fait qu'une route racine existe. | Section 5; [CAPTURE À AJOUTER]. |
+| Page Aide | Une vue/route Aide est référencée dans le code frontend. | Vérifier accès selon le profil, contenu affiché et liens; capture [PREUVE À AJOUTER]. | Section 5 ou annexe utilisateur. |
+| Cycle de vie des devis | Les règles de statut et la séquence sont décrites par le backend et représentées par les figures du rapport. La séquence runtime complète incluant envoi réel et archivage n'est pas démontrée. | Tester et documenter séparément création, transitions, génération, envoi, suivi et archivage; préciser pour chaque étape si testée, proposée ou non disponible. | Sections 3.5, 5 et 7; figures 2 et 3. |
+| Page Support | La vue/route Support est référencée dans le code frontend. | Vérifier affichage, formulaire ou canal proposé, comportement des liens et capture [PREUVE À AJOUTER]. | Section 5 ou annexe utilisateur. |
+| Mentions légales | Une vue/route dédiée est présente dans le code frontend. | Faire vérifier l'exactitude et l'autorisation des informations légales par l'entreprise; joindre une capture expurgée au besoin. La présence dans le code ne vaut pas validation juridique. | Section 5; [VALIDATION À FOURNIR]. |
+| Confidentialité | Une vue/route dédiée est présente dans le code frontend. | Faire confirmer la conformité du contenu avec les pratiques réellement appliquées (données, conservation, droits, contact); joindre une capture. | Sections 5 et 6; [VALIDATION À FOURNIR]. |
+
+Corrections d'interface communiquées par le porteur du projet :
+- [INFORMATION À FOURNIR] Pour chaque correction : remarque d'origine, écran,
+  comportement avant, changement effectué, date et preuve après correction.
+- Le compte rendu existant confirme une correction technique dans
+  `Frontend/src/App.tsx` (lint/build réussis) mais ne décrit pas une modification
+  visuelle du tableau de bord, des pages publiques ou du parcours devis.
+- Ne pas marquer un écran comme « vérifié » sur la seule base de sa présence en code.
+
+
+14. TESTS, VALIDATION ET LIMITES
+
+| Catégorie | Éléments répertoriés | Résultat / statut | Portée et limites |
+|---|---|---|---|
+| Tests automatisés backend | `python -m pytest -q tests`, depuis `Backend`. | Vérifié localement : 32 réussis, 0 échoué, 3 ignorés; exécution du 13 octobre 2026. | SQLite et stockages temporaires, données synthétiques, SMTP désactivé. Les trois tests runtime ignorés dans cette suite ne sont pas des échecs; ils ont été lancés séparément. |
+| Parcours runtime automatisés | `python -m pytest -vv --tb=no -rN tests/runtime_validation`, contre une API locale isolée. | Vérifié localement : 3 réussis, 0 échoué, 0 ignoré. Capture répertoriée dans `REFERENCE/figures/07_runtime_tests_terminal_capture.png`. | Authentification/session; dashboard et persistance; création, persistance, génération et téléchargement PDF. Ce n'est pas un test de production ni une recette complète de tous les rôles. |
+| Lint frontend | `npm run lint`, depuis `Frontend`. | Vérifié localement : réussi après correction. | Vérifie les règles de lint, pas le fonctionnement visuel ou métier de chaque écran. |
+| Build frontend | `npm run build`, depuis `Frontend`. | Vérifié localement : TypeScript et Vite ont réussi après correction. | Vérifie la compilation; ne prouve pas le bon fonctionnement de chaque parcours navigateur. |
+| Tests de notifications | Tests backend utilisant des mocks pour vérifier les conditions, messages et échecs simulés. | Exécution et portée consignées dans le compte rendu de vérification. | Aucun e-mail réel envoyé ni réception vérifiée; configuration SMTP communiquée par le porteur mais non testée en livraison. |
+| Vérifications manuelles | [INFORMATION À FOURNIR] Aucune liste distincte de vérifications manuelles avec date, profil, environnement et résultat n'est consignée dans ce document. | À documenter. | Ne pas requalifier un test automatisé en vérification manuelle. |
+| Scénarios proposés mais non exécutés | Mesures avant/après; e-mail réel; recette complète d'interface et de statuts; cas limites PDF; test de sauvegarde/restauration; essai de production; validation entreprise. | À documenter / Non réalisé selon le scénario. | Indiquer explicitement « proposé mais non exécuté » si le scénario n'a pas été lancé. |
+| Fonctionnalités testées localement | Authentification/session, dashboard API, persistance d'une cotation synthétique, génération/téléchargement PDF, suite backend, lint/build. | Vérifié dans les limites des résultats ci-dessus. | Environnements locaux, comptes/données synthétiques; PDF non validé dans l'image de production ni comparé/accepté par l'entreprise. |
+| Fonctionnalités vérifiées en production | Aucun déploiement ou environnement public n'est confirmé dans les éléments recensés. | Non réalisé / non vérifié. | Ne pas écrire « testé en production », « déployé » ou « opérationnel en ligne » sans preuve datée. |
+| Limites restantes | Aucun gain chiffré, retour utilisateur, PV de recette, preuve de réception SMTP, restauration testée ou activation du Cron en production n'est recensé. | À documenter si de nouvelles preuves sont fournies; sinon conserver comme limite. | Voir le compte rendu initial et la section 15. |
+
+Pour toute nouvelle preuve de test, consigner : date, commit/version, environnement,
+commande ou scénario, profil utilisé, données synthétiques ou autorisées, résultat
+attendu, résultat observé, code de sortie, artefact/capture et limites. Masquer les
+secrets, identifiants et données personnelles avant toute insertion dans le rapport.
+
+
+15. BILAN PROVISOIRE ET INFORMATIONS À FOURNIR
+
+Le bilan final ne doit être arrêté qu'après collecte des informations manquantes.
+Sur la base des éléments actuellement recensés, le rapport peut décrire le besoin
+initial, les fonctionnalités présentes dans le code local, les règles de rôles
+observées, les tests locaux exécutés et les limites associées. Il ne peut pas encore
+attribuer de gain chiffré, de validation formelle de l'entreprise, de livraison
+SMTP réussie, de sauvegarde/restauration opérationnelle ou de déploiement en production.
+
+Trame du bilan à compléter :
+- Objectifs atteints : [À COMPLÉTER à partir des objectifs et des preuves disponibles.]
+- Demandes du professeur prises en compte : [À COMPLÉTER depuis le tableau de section 11.]
+- Résultats observés : [À COMPLÉTER avec les résultats vérifiables, leur date et leur portée.]
+- Limites restantes : tests ou fonctions non validés, absence de mesures, limites de
+  déploiement ou de validation [À CONFIRMER].
+- Améliorations envisageables : [À COMPLÉTER en distinguant recommandations futures et
+  fonctions déjà implémentées.]
+
+Éléments à transmettre pour la prochaine mise à jour :
+1. Les remarques du professeur postérieures au 25 août 2026, si elles existent, sous
+   forme exacte ou avec leur document source.
+2. La liste des corrections/fonctionnalités réellement ajoutées depuis cette note,
+   avec dates approximatives et écrans concernés.
+3. Les captures d'écran avant/après disponibles, en indiquant profil et environnement.
+4. Les preuves de test complémentaires : commande, sortie, résultat et limites.
+5. Les vérifications manuelles, retours utilisateur et éventuel procès-verbal de
+   validation du maître de stage ou de l'entreprise.
+6. Toute preuve d'envoi/réception SMTP, de déploiement ou de test de restauration,
+   en masquant les données sensibles.
+7. Des mesures métier avant/après comparables et autorisées si des gains doivent être
+   présentés; à défaut, conserver l'absence de mesure comme limite.
+
+FIN DU COMPLEMENT DE TRAVAIL

@@ -2,7 +2,7 @@
 
 import logging
 import logging
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
@@ -86,7 +86,10 @@ def health():
             connection.execute(text("SELECT 1"))
     except Exception as exc:
         logger.exception("Database health check failed")
-        return {"status": "failed", "details": {"database": "failed"}}
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "failed", "details": {"database": "failed"}},
+        ) from exc
 
     return {"status": "ok", "details": {"database": "ok"}}
 
