@@ -1,4 +1,5 @@
 from datetime import date
+import base64
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from types import SimpleNamespace
@@ -87,9 +88,36 @@ def test_generated_pdf_uses_configured_company_and_real_quotation_values(
     assert "Incoterm" in text
     assert "DDP" in text
     assert "Coordonnées bancaires de test" in text
-    assert "Désignation" in text
-    assert "Prix unitaire HT" in text
+    assert "Libellé" in text
+    assert "PU HT" in text
     assert "Montant HT" in text
+
+
+def test_generated_pdf_restores_company_logo_and_background_watermark(
+    isolated_pdf_environment,
+    monkeypatch,
+):
+    logo_path = Path(__file__).resolve().parents[2] / "REFERENCE" / "logo.jpeg"
+    logo_data = base64.b64encode(logo_path.read_bytes()).decode("ascii")
+    monkeypatch.setattr(
+        pdf_service,
+        "_encode_logo_to_data_uri",
+        lambda: f"data:image/jpeg;base64,{logo_data}",
+    )
+    quotation = _quotation([_article("Article avec logo", "1", "1000")])
+
+    reader, text = _generate_and_read_pdf(quotation, isolated_pdf_environment)
+    html = pdf_service.render_quotation_html(quotation)
+
+    assert 'class="company-logo"' in html
+    assert 'class="watermark"' in html
+    assert "Article avec logo" in text
+    resources = reader.pages[0]["/Resources"].get_object()
+    xobjects = resources["/XObject"].get_object()
+    assert any(
+        xobject.get_object().get("/Subtype") == "/Image"
+        for xobject in xobjects.values()
+    )
 
 
 def test_generated_pdf_sums_multiple_articles_and_decimal_quantities(
@@ -163,7 +191,7 @@ def test_generated_pdf_repeats_table_heading_across_pages(isolated_pdf_environme
     assert len(reader.pages) > 1
     assert "Article de test 001" in text
     assert "Article de test 080" in text
-    assert text.count("Désignation") >= 2
+    assert text.count("Libellé") >= 2
     assert "8 000 FCFA" in text
 
 
