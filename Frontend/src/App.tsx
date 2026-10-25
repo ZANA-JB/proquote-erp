@@ -439,7 +439,7 @@ function PrivacyPage() {
               <ul className="privacy-list">
                 <li>Nom, e-mail, adresse et référence du client enregistrés dans le devis</li>
                 <li>Référence et dates du devis, statut et montant</li>
-                <li>Désignation des articles, quantités, unités, prix et conditions commerciales</li>
+                <li>Désignation des articles, quantités, unités, prix, code et taux de TVA, mode de règlement et modalités/échéance saisis au devis</li>
                 <li>État payé/non payé et données de relance lorsque ces fonctionnalités sont utilisées</li>
               </ul>
             </div>
@@ -461,7 +461,7 @@ function PrivacyPage() {
           <ul className="privacy-list privacy-list-columns">
             <li>Authentification, gestion des rôles et demandes d’accès</li>
             <li>Création, consultation, modification et suppression de devis selon les permissions</li>
-            <li>Calcul des montants, génération et téléchargement de PDF</li>
+            <li>Calcul des montants HT, TVA et TTC selon le régime et le taux saisis, génération et téléchargement de PDF</li>
             <li>Envoi de devis et relances par e-mail via SMTP lorsque configuré</li>
             <li>Suivi de statut et données de paiement (état payé/non payé)</li>
             <li>Tableaux de bord, graphiques et historique d’actions</li>
@@ -611,7 +611,7 @@ function SupportPage() {
             <h2>Contacter l’assistance</h2>
           </div>
           <p>
-            Pour toute difficulté, contactez l’administrateur du système. Le message préparé inclut les informations utiles au diagnostic ; confirmez son contenu et envoyez-le depuis votre messagerie.
+            Pour toute difficulté, contactez l’administrateur du système. Le brouillon s’ouvre sans message prérempli ; décrivez le problème et les éléments utiles au diagnostic avant de l’envoyer depuis votre messagerie.
           </p>
           <a
             className="support-contact-button"
