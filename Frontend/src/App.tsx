@@ -347,7 +347,6 @@ function LegalNoticesPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">domain</span>
             <h2>Éditeur</h2>
           </div>
           <p>
@@ -360,13 +359,13 @@ function LegalNoticesPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">dns</span>
             <h2>Hébergement</h2>
           </div>
           <p>
-            Le Blueprint <code>render.yaml</code> déclare des services sur Render. L’entité
-            contractante de l’hébergeur, son adresse juridique, la région d’hébergement effectivement
-            utilisée et les conditions applicables doivent être vérifiées dans le compte Render.
+            Plateforme d’hébergement configurée : Render. Le projet y déclare l’API, le frontend
+            statique, PostgreSQL, les tâches planifiées et le stockage persistant des PDF dans
+            <code>render.yaml</code>. La région réellement utilisée et les informations du compte
+            Render doivent être confirmées dans le tableau de bord.
           </p>
         </section>
 
@@ -402,7 +401,6 @@ function PrivacyPage() {
 
         <section className="legal-section privacy-intro-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">shield</span>
             <h2>Portée</h2>
           </div>
           <p>
@@ -414,7 +412,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">database</span>
             <h2>Données utilisées</h2>
           </div>
           <div className="privacy-grid">
@@ -449,7 +446,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">task_alt</span>
             <h2>Traitements visibles dans le code</h2>
           </div>
           <ul className="privacy-list privacy-list-columns">
@@ -464,7 +460,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">group</span>
             <h2>Accès aux données</h2>
           </div>
           <div className="privacy-role-list">
@@ -477,7 +472,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">lock</span>
             <h2>Sécurité et protection</h2>
           </div>
           <ul className="privacy-list privacy-list-columns">
@@ -491,7 +485,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">mail</span>
             <h2>Échanges par e-mail</h2>
           </div>
           <p>
@@ -504,11 +497,10 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">cloud</span>
             <h2>Hébergement et ressources externes</h2>
           </div>
           <ul className="privacy-list">
-            <li>Le Blueprint déclare l’API, le frontend, PostgreSQL et le stockage PDF sur Render ; le déploiement et sa région réelle doivent être confirmés dans le Dashboard Render.</li>
+            <li>Render est la plateforme déclarée pour l’API, le frontend statique, PostgreSQL, les tâches planifiées et le stockage PDF. La région effective reste à confirmer dans le compte Render.</li>
             <li>Le frontend charge les polices Inter et Material Symbols depuis Google Fonts.</li>
             <li>Les e-mails utilisent un serveur SMTP configuré par variables d’environnement ; le fournisseur effectivement retenu doit être confirmé dans Render.</li>
             <li>Aucun modèle ou parcours d’authentification client final n’a été trouvé dans le code audité.</li>
@@ -517,7 +509,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">schedule</span>
             <h2>Suppression, export et conservation</h2>
           </div>
           <p>
@@ -532,7 +523,6 @@ function PrivacyPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">contact_support</span>
             <h2>Informations à valider</h2>
           </div>
           <p>
@@ -570,7 +560,6 @@ function SupportPage() {
 
         <section className="legal-section">
           <div className="legal-section-heading">
-            <span className="material-symbols-outlined" aria-hidden="true">support_agent</span>
             <h2>Informations indisponibles</h2>
           </div>
           <p>Les informations de support technique ne sont pas disponibles.</p>
